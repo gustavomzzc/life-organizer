@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projetos — Life Organizer</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .project-card { background:var(--surface); border:0.5px solid var(--border); border-radius:var(--r-xl); padding:18px; margin-bottom:14px; transition:border-color 0.2s, transform 0.2s; }
+    .project-card:hover { border-color:var(--border2); transform:translateY(-1px); }
+    .project-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+    .project-icon { width:42px; height:42px; border-radius:var(--r-md); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .project-name { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text); }
+    .project-sub  { font-size:12px; color:var(--muted); margin-top:2px; }
+    .project-status { font-size:10px; font-weight:600; padding:3px 10px; border-radius:99px; margin-left:auto; }
+    .status-active  { background:rgba(74,222,128,0.12); color:var(--green); }
+    .status-planning{ background:rgba(251,191,36,0.12); color:var(--amber); }
+    .status-idea    { background:rgba(124,111,247,0.12); color:var(--accent2); }
+    .progress-track { height:4px; background:var(--bg3); border-radius:99px; overflow:hidden; margin-bottom:10px; }
+    .progress-fill  { height:100%; border-radius:99px; }
+    .task-chips { display:flex; flex-wrap:wrap; gap:6px; }
+    .task-chip { font-size:11px; padding:4px 10px; border-radius:99px; background:var(--bg3); border:0.5px solid var(--border); color:var(--muted); display:flex; align-items:center; gap:5px; cursor:pointer; transition:all 0.15s; }
+    .task-chip:hover { border-color:var(--border2); color:var(--text); }
+    .task-chip.done-chip { background:rgba(124,111,247,0.1); border-color:var(--accent); color:var(--accent2); text-decoration:line-through; opacity:0.6; }
+    .chip-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+
+    .add-project-form { background:var(--surface); border:0.5px solid var(--border); border-radius:var(--r-xl); padding:16px 18px; margin-bottom:20px; }
+    .form-title { font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text); margin-bottom:12px; }
+    .input-row { display:flex; gap:8px; margin-bottom:8px; }
+    .field-input { flex:1; background:var(--bg3); border:0.5px solid var(--border2); border-radius:var(--r-md); padding:9px 12px; color:var(--text); font-family:var(--font-body); font-size:13px; outline:none; }
+    .field-input:focus { border-color:var(--accent); }
+    .field-input::placeholder { color:var(--subtle); }
+    .save-btn { width:100%; padding:11px; background:var(--accent); border:none; border-radius:var(--r-md); color:white; font-family:var(--font-display); font-size:14px; font-weight:700; cursor:pointer; transition:opacity 0.15s; }
+    .save-btn:hover { opacity:0.88; }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="page-header">
+    <a href="../index.html" class="page-header-back" aria-label="Voltar">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="10,3 5,8 10,13"/></svg>
+    </a>
+    <div>
+      <div class="page-title">🚀 Projetos</div>
+      <div class="page-subtitle">Pessoais · desenvolvimento</div>
+    </div>
+  </header>
+
+  <main class="page-content">
+    <div class="section-title fade-up">Em andamento</div>
+
+    <!-- App Basquete -->
+    <div class="project-card fade-up">
+      <div class="project-header">
+        <div class="project-icon" style="background:rgba(124,111,247,0.12);">🏀</div>
+        <div>
+          <div class="project-name">App de Basquete</div>
+          <div class="project-sub">Análise de jogos, estatísticas e treinos</div>
+        </div>
+        <span class="project-status status-planning">Planejando</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:15%;background:var(--accent);"></div></div>
+      <div class="task-chips">
+        <div class="task-chip done-chip"><div class="chip-dot" style="background:var(--accent);"></div>Definir funcionalidades</div>
+        <div class="task-chip done-chip"><div class="chip-dot" style="background:var(--accent);"></div>Pesquisar stack</div>
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>Wireframes</div>
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>Banco de dados</div>
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>Tela de login</div>
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>Dashboard</div>
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>Registro de jogos</div>
+      </div>
+    </div>
+
+    <!-- Life Organizer -->
+    <div class="project-card fade-up">
+      <div class="project-header">
+        <div class="project-icon" style="background:rgba(52,211,153,0.1);">💻</div>
+        <div>
+          <div class="project-name">Life Organizer</div>
+          <div class="project-sub">Site pessoal de organização</div>
+        </div>
+        <span class="project-status status-active">Ativo</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:60%;background:var(--green);"></div></div>
+      <div class="task-chips">
+        <div class="task-chip done-chip"><div class="chip-dot" style="background:var(--green);"></div>Estrutura HTML</div>
+        <div class="task-chip done-chip"><div class="chip-dot" style="background:var(--green);"></div>Design / CSS</div>
+        <div class="task-chip done-chip"><div class="chip-dot" style="background:var(--green);"></div>Página inicial</div>
+        <div class="task-chip done-chip"><div class="chip-dot" style="background:var(--green);"></div>Basquete</div>
+        <div class="task-chip done-chip"><div class="chip-dot" style="background:var(--green);"></div>Financeiro</div>
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>Calendário</div>
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>localStorage completo</div>
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>PWA / mobile</div>
+      </div>
+    </div>
+
+    <div class="section-title fade-up" style="margin-top:8px;">Ideias futuras</div>
+
+    <div class="project-card fade-up">
+      <div class="project-header">
+        <div class="project-icon" style="background:rgba(251,191,36,0.1);">📊</div>
+        <div>
+          <div class="project-name">Dashboard de Estatísticas</div>
+          <div class="project-sub">Visualização dos dados do app de basquete</div>
+        </div>
+        <span class="project-status status-idea">Ideia</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:5%;background:var(--amber);"></div></div>
+      <div class="task-chips">
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>Pesquisar bibliotecas de gráficos</div>
+        <div class="task-chip"><div class="chip-dot" style="background:var(--muted);"></div>Protótipo</div>
+      </div>
+    </div>
+
+    <!-- Add Project -->
+    <div class="add-project-form fade-up">
+      <div class="form-title">+ Novo projeto</div>
+      <div class="input-row">
+        <input type="text" class="field-input" id="proj-name" placeholder="Nome do projeto...">
+        <input type="text" class="field-input" id="proj-emoji" placeholder="🚀" style="max-width:64px;">
+      </div>
+      <div class="input-row">
+        <input type="text" class="field-input" id="proj-desc" placeholder="Descrição...">
+      </div>
+      <button class="save-btn" onclick="alert('Em breve: adicionar projetos personalizados com localStorage!')">Criar projeto</button>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <a href="../index.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Início</span></a>
+    <a href="calendario.html" class="nav-item"><span class="nav-icon">📅</span><span class="nav-label">Calendário</span></a>
+    <a href="rotina.html" class="nav-item"><span class="nav-icon">🔄</span><span class="nav-label">Rotina</span></a>
+    <a href="basquete.html" class="nav-item"><span class="nav-icon">🏀</span><span class="nav-label">Basquete</span></a>
+    <a href="estudos.html" class="nav-item"><span class="nav-icon">📚</span><span class="nav-label">Estudos</span></a>
+  </nav>
+</div>
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estudos — Life Organizer</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .tab-bar{display:flex;gap:6px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:5px;margin-bottom:20px;}
+    .tab-btn{flex:1;background:none;border:none;padding:8px 4px;border-radius:var(--r-md);font-family:var(--font-body);font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;}
+    .tab-btn.active{background:var(--accent);color:#fff;}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
+
+    /* ── Forms ── */
+    .add-form{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-xl);padding:16px 18px;margin-bottom:16px;}
+    .form-title{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
+    .input-row{display:flex;gap:8px;margin-bottom:8px;}
+    .field-input{flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r-md);padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;}
+    .field-input:focus{border-color:var(--accent);}
+    .field-input::placeholder{color:var(--subtle);}
+    textarea.field-input{resize:vertical;min-height:80px;line-height:1.6;}
+    .save-btn{width:100%;padding:11px;background:var(--accent);border:none;border-radius:var(--r-md);color:#fff;font-family:var(--font-display);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+    .save-btn:hover{opacity:.88;}
+    .small-btn{padding:8px 14px;background:var(--accent);border:none;border-radius:var(--r-md);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+    .ghost-btn{padding:8px 14px;background:none;border:0.5px solid var(--border2);border-radius:var(--r-md);color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+    .ghost-btn:hover{border-color:var(--accent);color:var(--accent2);}
+
+    /* ── Subject cards ── */
+    .subject-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px;transition:border-color .15s;}
+    .subject-card:hover{border-color:var(--border2);}
+    .subject-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+    .subject-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+    .subject-name{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text);flex:1;}
+    .subject-grade{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:rgba(124,111,247,.12);color:var(--accent2);}
+    .subject-del{background:none;border:none;color:var(--subtle);cursor:pointer;font-size:18px;padding:2px 5px;opacity:0;transition:opacity .15s,color .15s;}
+    .subject-card:hover .subject-del{opacity:1;}
+    .subject-del:hover{color:var(--coral);}
+    .subject-progress-track{height:4px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+    .subject-progress-fill{height:100%;border-radius:99px;transition:width .4s;}
+    .subject-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:7px;}
+    .subject-notes{font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);line-height:1.5;}
+
+    /* ── Grade edit ── */
+    .grade-edit{display:none;gap:6px;margin-top:8px;}
+    .grade-edit.show{display:flex;}
+
+    /* ── Color picker ── */
+    .color-row{display:flex;gap:7px;margin-bottom:10px;}
+    .color-opt{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0;}
+    .color-opt.selected{border-color:#fff;transform:scale(1.15);}
+
+    /* ── Books ── */
+    .book-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);margin-bottom:10px;overflow:hidden;transition:border-color .15s;}
+    .book-card:hover{border-color:var(--border2);}
+    .book-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;}
+    .book-cover{width:42px;height:56px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+    .book-info{flex:1;min-width:0;}
+    .book-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text);}
+    .book-author{font-size:12px;color:var(--muted);margin-top:2px;}
+    .book-prog-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+    .book-prog-track{flex:1;height:3px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+    .book-prog-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .4s;}
+    .book-prog-label{font-size:10px;color:var(--muted);white-space:nowrap;}
+    .book-status{font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;flex-shrink:0;}
+    .status-reading{background:rgba(124,111,247,.12);color:var(--accent2);}
+    .status-queue{background:rgba(255,255,255,.06);color:var(--muted);}
+    .status-done{background:rgba(74,222,128,.12);color:var(--green);}
+    .book-del{background:none;border:none;color:var(--subtle);cursor:pointer;font-size:18px;padding:2px 5px;opacity:0;transition:opacity .15s,color .15s;}
+    .book-card:hover .book-del{opacity:1;}
+    .book-del:hover{color:var(--coral);}
+    .book-body{display:none;padding:0 16px 14px;border-top:0.5px solid var(--border);}
+    .book-card.open .book-body{display:block;}
+    .book-resume{font-size:13px;color:var(--muted);line-height:1.7;margin-top:10px;white-space:pre-wrap;}
+    .book-resume-empty{font-size:12px;color:var(--subtle);font-style:italic;margin-top:10px;}
+    .resume-edit-row{margin-top:10px;}
+    .accordion-arrow{font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+    .book-card.open .accordion-arrow{transform:rotate(180deg);}
+
+    /* ── Pomodoro ── */
+    .pomo-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;padding:10px 0 20px;}
+    .pomo-ring{position:relative;width:190px;height:190px;}
+    .pomo-svg{transform:rotate(-90deg);}
+    .pomo-track{fill:none;stroke:var(--surface2);stroke-width:10;}
+    .pomo-fill{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .3s;}
+    .pomo-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .pomo-time{font-family:var(--font-display);font-size:42px;font-weight:800;color:var(--text);letter-spacing:-2px;}
+    .pomo-phase{font-size:12px;color:var(--muted);margin-top:2px;}
+    .pomo-controls{display:flex;gap:10px;}
+    .pomo-btn{padding:10px 24px;border-radius:var(--r-md);font-family:var(--font-display);font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .15s;}
+    .pomo-btn.primary{background:var(--accent);color:#fff;}
+    .pomo-btn.secondary{background:var(--surface);color:var(--muted);border:0.5px solid var(--border2);}
+    .pomo-btn:hover{opacity:.85;}
+    .pomo-sessions{display:flex;gap:6px;}
+    .pomo-dot{width:10px;height:10px;border-radius:50%;background:var(--surface2);border:0.5px solid var(--border2);}
+    .pomo-dot.done{background:var(--accent);border-color:var(--accent);}
+    .pomo-stats{display:flex;gap:20px;text-align:center;}
+    .pomo-stat-val{font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--text);}
+    .pomo-stat-lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+
+    /* ── Pomodoro settings ── */
+    .pomo-settings{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:16px;}
+    .pomo-settings-title{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
+    .time-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+    .time-label{font-size:11px;color:var(--muted);margin-bottom:4px;}
+    .time-input{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r-md);padding:8px;color:var(--text);font-family:var(--font-display);font-size:18px;font-weight:700;text-align:center;outline:none;}
+    .time-input:focus{border-color:var(--accent);}
+
+    /* ── Empty ── */
+    .empty-state{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px;}
+    .empty-icon{font-size:32px;margin-bottom:8px;}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="page-header">
+    <a href="../index.html" class="page-header-back" aria-label="Voltar">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="10,3 5,8 10,13"/></svg>
+    </a>
+    <div>
+      <div class="page-title">📚 Estudos</div>
+      <div class="page-subtitle">Matérias · livros · pomodoro</div>
+    </div>
+  </header>
+
+  <main class="page-content">
+    <div class="tab-bar fade-up">
+      <button class="tab-btn active" onclick="switchTab('materias',this)">Matérias</button>
+      <button class="tab-btn" onclick="switchTab('livros',this)">Livros</button>
+      <button class="tab-btn" onclick="switchTab('pomodoro',this)">Pomodoro</button>
+    </div>
+
+    <!-- ══════════ MATÉRIAS ══════════ -->
+    <div id="tab-materias" class="tab-panel active">
+      <div class="section-title">Minhas matérias</div>
+      <div id="subject-list"></div>
+      <div class="add-form">
+        <div class="form-title">+ Nova matéria</div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="s-name" placeholder="Nome da matéria...">
+        </div>
+        <div class="input-row">
+          <input type="number" class="field-input" id="s-grade" placeholder="Nota atual (opcional)" min="0" max="10" step="0.1">
+          <input type="text" class="field-input" id="s-exam" placeholder="Data da prova (opcional)">
+        </div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="s-notes" placeholder="Observações (ex: cap. 3 pendente...)">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Cor</div>
+        <div class="color-row" id="s-color-row">
+          <div class="color-opt selected" style="background:#7c6ff7;" data-color="#7c6ff7" onclick="selectSubjColor(this)"></div>
+          <div class="color-opt" style="background:#34d399;" data-color="#34d399" onclick="selectSubjColor(this)"></div>
+          <div class="color-opt" style="background:#fbbf24;" data-color="#fbbf24" onclick="selectSubjColor(this)"></div>
+          <div class="color-opt" style="background:#f472b6;" data-color="#f472b6" onclick="selectSubjColor(this)"></div>
+          <div class="color-opt" style="background:#60a5fa;" data-color="#60a5fa" onclick="selectSubjColor(this)"></div>
+          <div class="color-opt" style="background:#f87171;" data-color="#f87171" onclick="selectSubjColor(this)"></div>
+        </div>
+        <input type="hidden" id="s-color" value="#7c6ff7">
+        <button class="save-btn" onclick="addSubject()">Adicionar matéria</button>
+      </div>
+    </div>
+
+    <!-- ══════════ LIVROS ══════════ -->
+    <div id="tab-livros" class="tab-panel">
+      <div class="section-title">Minha biblioteca</div>
+      <div id="book-list"></div>
+      <div class="add-form">
+        <div class="form-title">+ Novo livro</div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="b-title" placeholder="Título do livro...">
+          <input type="text" class="field-input" id="b-emoji" placeholder="📖" style="max-width:62px;">
+        </div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="b-author" placeholder="Autor...">
+        </div>
+        <div class="input-row">
+          <input type="number" class="field-input" id="b-page" placeholder="Página atual" min="0">
+          <input type="number" class="field-input" id="b-total" placeholder="Total de páginas" min="1">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Status</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;" id="b-status-row">
+          <span class="book-status status-reading" style="cursor:pointer;padding:6px 14px;" data-val="reading" onclick="selectBookStatus(this)">📖 Lendo</span>
+          <span class="book-status status-queue"   style="cursor:pointer;padding:6px 14px;border:0.5px solid var(--border);" data-val="queue"   onclick="selectBookStatus(this)">⏳ Na fila</span>
+          <span class="book-status status-done"    style="cursor:pointer;padding:6px 14px;border:0.5px solid var(--border);" data-val="done"    onclick="selectBookStatus(this)">✓ Lido</span>
+        </div>
+        <input type="hidden" id="b-status" value="reading">
+        <div class="input-row">
+          <textarea class="field-input" id="b-resume" placeholder="Resumo / anotações (você pode adicionar depois também)..."></textarea>
+        </div>
+        <button class="save-btn" onclick="addBook()">Adicionar livro</button>
+      </div>
+    </div>
+
+    <!-- ══════════ POMODORO ══════════ -->
+    <div id="tab-pomodoro" class="tab-panel">
+
+      <!-- Settings -->
+      <div class="pomo-settings fade-up">
+        <div class="pomo-settings-title">⚙️ Configurar tempos</div>
+        <div class="time-grid">
+          <div>
+            <div class="time-label">Foco (min)</div>
+            <input type="number" class="time-input" id="pomo-focus-input" value="25" min="1" max="120" onchange="applyPomoSettings()">
+          </div>
+          <div>
+            <div class="time-label">Pausa curta</div>
+            <input type="number" class="time-input" id="pomo-short-input" value="5" min="1" max="60" onchange="applyPomoSettings()">
+          </div>
+          <div>
+            <div class="time-label">Pausa longa</div>
+            <input type="number" class="time-input" id="pomo-long-input" value="15" min="1" max="60" onchange="applyPomoSettings()">
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">A pausa longa ocorre a cada 4 sessões de foco.</div>
+      </div>
+
+      <!-- Timer -->
+      <div class="pomo-wrap">
+        <div class="pomo-sessions" id="pomo-sessions">
+          <div class="pomo-dot" id="ps0"></div>
+          <div class="pomo-dot" id="ps1"></div>
+          <div class="pomo-dot" id="ps2"></div>
+          <div class="pomo-dot" id="ps3"></div>
+        </div>
+        <div class="pomo-ring">
+          <svg class="pomo-svg" width="190" height="190" viewBox="0 0 190 190">
+            <circle class="pomo-track" cx="95" cy="95" r="80"/>
+            <circle class="pomo-fill" id="pomo-circle" cx="95" cy="95" r="80" stroke-dasharray="502.65" stroke-dashoffset="0"/>
+          </svg>
+          <div class="pomo-center">
+            <div class="pomo-time" id="pomo-time">25:00</div>
+            <div class="pomo-phase" id="pomo-phase">Foco</div>
+          </div>
+        </div>
+        <div class="pomo-controls">
+          <button class="pomo-btn secondary" onclick="resetPomo()">Reset</button>
+          <button class="pomo-btn primary" id="pomo-start-btn" onclick="togglePomo()">Iniciar</button>
+        </div>
+        <div class="pomo-stats">
+          <div>
+            <div class="pomo-stat-val" id="pomo-completed">0</div>
+            <div class="pomo-stat-lbl">Sessões hoje</div>
+          </div>
+          <div>
+            <div class="pomo-stat-val" id="pomo-minutes">0</div>
+            <div class="pomo-stat-lbl">Min focado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <a href="../index.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Início</span></a>
+    <a href="calendario.html" class="nav-item"><span class="nav-icon">📅</span><span class="nav-label">Calendário</span></a>
+    <a href="rotina.html" class="nav-item"><span class="nav-icon">🔄</span><span class="nav-label">Rotina</span></a>
+    <a href="basquete.html" class="nav-item"><span class="nav-icon">🏀</span><span class="nav-label">Basquete</span></a>
+    <a href="estudos.html" class="nav-item active"><span class="nav-icon">📚</span><span class="nav-label">Estudos</span></a>
+  </nav>
+</div>
+
+<script>
+// ── Tab ──────────────────────────────────────────────────────
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Storage ──────────────────────────────────────────────────
+function getSubjects(){ return JSON.parse(localStorage.getItem('study_subjects')||'[]'); }
+function saveSubjects(d){ localStorage.setItem('study_subjects',JSON.stringify(d)); }
+function getBooks(){ return JSON.parse(localStorage.getItem('study_books')||'[]'); }
+function saveBooks(d){ localStorage.setItem('study_books',JSON.stringify(d)); }
+
+// ── Subject color ─────────────────────────────────────────────
+let subjColor = '#7c6ff7';
+function selectSubjColor(el){
+  el.closest('.color-row').querySelectorAll('.color-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  subjColor = el.dataset.color;
+  document.getElementById('s-color').value = subjColor;
+}
+
+// ── Add subject ───────────────────────────────────────────────
+function addSubject(){
+  const name  = document.getElementById('s-name').value.trim();
+  const grade = document.getElementById('s-grade').value;
+  const exam  = document.getElementById('s-exam').value.trim();
+  const notes = document.getElementById('s-notes').value.trim();
+  const color = document.getElementById('s-color').value;
+  if(!name) return;
+  const subjects = getSubjects();
+  subjects.push({ id:'s_'+Date.now(), name, grade:grade||null, exam, notes, color });
+  saveSubjects(subjects);
+  ['s-name','s-grade','s-exam','s-notes'].forEach(id=>document.getElementById(id).value='');
+  renderSubjects();
+}
+
+function deleteSubject(id){
+  saveSubjects(getSubjects().filter(s=>s.id!==id));
+  renderSubjects();
+}
+
+function updateGrade(id, val){
+  const subjects = getSubjects();
+  const s = subjects.find(s=>s.id===id);
+  if(!s) return;
+  s.grade = val||null;
+  saveSubjects(subjects);
+  renderSubjects();
+}
+
+function renderSubjects(){
+  const subjects = getSubjects();
+  const el = document.getElementById('subject-list');
+  if(!subjects.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📖</div>Nenhuma matéria ainda.<br>Adicione abaixo!</div>`;
+    return;
+  }
+  el.innerHTML = subjects.map(s=>{
+    const grade = s.grade !== null && s.grade !== '' ? parseFloat(s.grade) : null;
+    const pct = grade !== null ? Math.min(100, (grade/10)*100) : 0;
+    const gradeColor = grade === null ? 'var(--muted)' : grade >= 7 ? 'var(--green)' : grade >= 5 ? 'var(--amber)' : 'var(--coral)';
+    return `
+    <div class="subject-card">
+      <div class="subject-header">
+        <div class="subject-dot" style="background:${s.color};"></div>
+        <span class="subject-name">${s.name}</span>
+        ${grade !== null
+          ? `<span class="subject-grade" style="background:${gradeColor}18;color:${gradeColor};">${grade.toFixed(1)}</span>`
+          : `<span style="font-size:11px;color:var(--subtle);">sem nota</span>`}
+        <button class="subject-del" onclick="deleteSubject('${s.id}')">×</button>
+      </div>
+      ${grade !== null ? `
+      <div class="subject-progress-track">
+        <div class="subject-progress-fill" style="width:${pct}%;background:${s.color};"></div>
+      </div>` : ''}
+      <div class="subject-meta">
+        ${s.exam ? `<span>📅 Prova: ${s.exam}</span>` : '<span></span>'}
+        <span style="cursor:pointer;color:var(--accent2);" onclick="document.getElementById('gedit-${s.id}').classList.toggle('show')">✏️ editar nota</span>
+      </div>
+      <div class="grade-edit" id="gedit-${s.id}">
+        <input type="number" class="field-input" placeholder="Nova nota..." min="0" max="10" step="0.1"
+          style="max-width:130px;" id="gnew-${s.id}">
+        <button class="small-btn" onclick="updateGrade('${s.id}',document.getElementById('gnew-${s.id}').value)">Salvar</button>
+      </div>
+      ${s.notes ? `<div class="subject-notes">📝 ${s.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Book status selector ──────────────────────────────────────
+function selectBookStatus(el){
+  document.querySelectorAll('#b-status-row .book-status').forEach(e=>{
+    e.style.opacity='0.45'; e.style.transform='scale(0.95)';
+  });
+  el.style.opacity='1'; el.style.transform='scale(1)';
+  document.getElementById('b-status').value = el.dataset.val;
+}
+
+// ── Add book ──────────────────────────────────────────────────
+function addBook(){
+  const title  = document.getElementById('b-title').value.trim();
+  const emoji  = document.getElementById('b-emoji').value.trim() || '📖';
+  const author = document.getElementById('b-author').value.trim();
+  const page   = parseInt(document.getElementById('b-page').value)||0;
+  const total  = parseInt(document.getElementById('b-total').value)||0;
+  const status = document.getElementById('b-status').value;
+  const resume = document.getElementById('b-resume').value.trim();
+  if(!title) return;
+  const books = getBooks();
+  books.push({ id:'b_'+Date.now(), title, emoji, author, page, total, status, resume });
+  saveBooks(books);
+  ['b-title','b-emoji','b-author','b-page','b-total','b-resume'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('b-status').value='reading';
+  document.querySelectorAll('#b-status-row .book-status').forEach((e,i)=>{
+    e.style.opacity=i===0?'1':'0.45'; e.style.transform=i===0?'scale(1)':'scale(0.95)';
+  });
+  renderBooks();
+}
+
+function deleteBook(id){
+  saveBooks(getBooks().filter(b=>b.id!==id));
+  renderBooks();
+}
+
+function updateBookPage(id, val){
+  const books = getBooks();
+  const b = books.find(b=>b.id===id);
+  if(!b) return;
+  b.page = parseInt(val)||0;
+  saveBooks(books);
+  renderBooks();
+}
+
+function saveBookResume(id){
+  const books = getBooks();
+  const b = books.find(b=>b.id===id);
+  if(!b) return;
+  b.resume = document.getElementById('resume-input-'+id).value.trim();
+  saveBooks(books);
+  renderBooks();
+}
+
+function toggleBook(card){ card.classList.toggle('open'); }
+
+function renderBooks(){
+  const books = getBooks();
+  const el = document.getElementById('book-list');
+  if(!books.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📚</div>Nenhum livro ainda.<br>Adicione abaixo!</div>`;
+    return;
+  }
+
+  const statusLabel = { reading:'📖 Lendo', queue:'⏳ Na fila', done:'✓ Lido' };
+  const statusClass = { reading:'status-reading', queue:'status-queue', done:'status-done' };
+
+  el.innerHTML = books.map(b=>{
+    const pct = b.total > 0 ? Math.min(100,Math.round((b.page/b.total)*100)) : 0;
+    return `
+    <div class="book-card" id="bcard-${b.id}">
+      <div class="book-header" onclick="toggleBook(document.getElementById('bcard-${b.id}'))">
+        <div class="book-cover" style="background:rgba(124,111,247,.1);">${b.emoji}</div>
+        <div class="book-info">
+          <div class="book-title">${b.title}</div>
+          ${b.author?`<div class="book-author">${b.author}</div>`:''}
+          ${b.total>0?`
+          <div class="book-prog-row">
+            <div class="book-prog-track"><div class="book-prog-fill" style="width:${pct}%;"></div></div>
+            <span class="book-prog-label">${b.page}/${b.total} pág · ${pct}%</span>
+          </div>`:''}
+        </div>
+        <span class="book-status ${statusClass[b.status]}">${statusLabel[b.status]}</span>
+        <button class="book-del" onclick="event.stopPropagation();deleteBook('${b.id}')">×</button>
+        <span class="accordion-arrow">▾</span>
+      </div>
+
+      <div class="book-body">
+        <!-- Update page -->
+        ${b.total>0?`
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+          <span style="font-size:12px;color:var(--muted);">Página atual:</span>
+          <input type="number" class="field-input" value="${b.page}" min="0" max="${b.total}"
+            style="max-width:90px;padding:6px 10px;"
+            onchange="updateBookPage('${b.id}',this.value)">
+          <span style="font-size:12px;color:var(--muted);">de ${b.total}</span>
+        </div>`:''}
+
+        <!-- Resume -->
+        <div style="font-size:11px;color:var(--muted);margin-top:12px;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Resumo / Anotações</div>
+        ${b.resume
+          ? `<div class="book-resume">${b.resume}</div>`
+          : `<div class="book-resume-empty">Nenhum resumo ainda.</div>`}
+        <textarea class="field-input" id="resume-input-${b.id}" placeholder="Escreva seu resumo ou anotações aqui..."
+          style="margin-top:8px;min-height:90px;">${b.resume||''}</textarea>
+        <button class="small-btn" style="margin-top:8px;" onclick="saveBookResume('${b.id}')">Salvar resumo</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Pomodoro ──────────────────────────────────────────────────
+const circumference = 2 * Math.PI * 80;
+let FOCUS_SEC  = 25 * 60;
+let SHORT_SEC  = 5  * 60;
+let LONG_SEC   = 15 * 60;
+
+let pomoRunning = false, pomoInterval = null;
+let pomoSeconds = FOCUS_SEC, pomoIsBreak = false, pomoSession = 0;
+let pomoCompleted = parseInt(localStorage.getItem('pomo_today_c')||'0');
+let pomoMinutes   = parseInt(localStorage.getItem('pomo_today_m')||'0');
+
+function applyPomoSettings(){
+  const f = parseInt(document.getElementById('pomo-focus-input').value)||25;
+  const s = parseInt(document.getElementById('pomo-short-input').value)||5;
+  const l = parseInt(document.getElementById('pomo-long-input').value)||15;
+  FOCUS_SEC = f * 60;
+  SHORT_SEC = s * 60;
+  LONG_SEC  = l * 60;
+  if(!pomoRunning){ pomoSeconds = FOCUS_SEC; pomoIsBreak = false; }
+  updatePomoUI();
+}
+
+function updatePomoUI(){
+  const m = String(Math.floor(pomoSeconds/60)).padStart(2,'0');
+  const s = String(pomoSeconds%60).padStart(2,'0');
+  document.getElementById('pomo-time').textContent  = `${m}:${s}`;
+  document.getElementById('pomo-phase').textContent = pomoIsBreak ? (pomoSession%4===0&&pomoSession>0?'Pausa longa':'Pausa') : 'Foco';
+  const total = pomoIsBreak ? (pomoSession%4===0&&pomoSession>0?LONG_SEC:SHORT_SEC) : FOCUS_SEC;
+  const offset = circumference * (1 - pomoSeconds/total);
+  document.getElementById('pomo-circle').style.strokeDashoffset = offset;
+  document.getElementById('pomo-circle').style.stroke = pomoIsBreak ? '#34d399' : '#7c6ff7';
+  document.getElementById('pomo-completed').textContent = pomoCompleted;
+  document.getElementById('pomo-minutes').textContent   = pomoMinutes;
+  for(let i=0;i<4;i++){
+    document.getElementById('ps'+i).classList.toggle('done', i < (pomoSession%4));
+  }
+}
+
+function togglePomo(){
+  if(pomoRunning){
+    clearInterval(pomoInterval);
+    pomoRunning = false;
+    document.getElementById('pomo-start-btn').textContent='Continuar';
+  } else {
+    pomoRunning = true;
+    document.getElementById('pomo-start-btn').textContent='Pausar';
+    pomoInterval = setInterval(()=>{
+      pomoSeconds--;
+      if(pomoSeconds<=0){
+        if(!pomoIsBreak){
+          pomoSession++;
+          pomoCompleted++;
+          const focusMin = parseInt(document.getElementById('pomo-focus-input').value)||25;
+          pomoMinutes += focusMin;
+          localStorage.setItem('pomo_today_c', pomoCompleted);
+          localStorage.setItem('pomo_today_m', pomoMinutes);
+        }
+        pomoIsBreak = !pomoIsBreak;
+        const isLong = !pomoIsBreak && pomoSession%4===0 && pomoSession>0;
+        pomoSeconds = pomoIsBreak ? FOCUS_SEC : (isLong ? LONG_SEC : SHORT_SEC);
+      }
+      updatePomoUI();
+    },1000);
+  }
+}
+
+function resetPomo(){
+  clearInterval(pomoInterval);
+  pomoRunning = false;
+  pomoSeconds = FOCUS_SEC;
+  pomoIsBreak = false;
+  document.getElementById('pomo-start-btn').textContent='Iniciar';
+  updatePomoUI();
+}
+
+// ── Init ─────────────────────────────────────────────────────
+renderSubjects();
+renderBooks();
+updatePomoUI();
+</script>
+</body>
+</html>

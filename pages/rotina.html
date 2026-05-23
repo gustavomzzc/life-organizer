@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rotina — Life Organizer</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .tab-bar{display:flex;gap:6px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:5px;margin-bottom:20px;}
+    .tab-btn{flex:1;background:none;border:none;padding:8px 6px;border-radius:var(--r-md);font-family:var(--font-body);font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;}
+    .tab-btn.active{background:var(--accent);color:#fff;}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
+
+    /* ── Forms ── */
+    .add-form{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-xl);padding:16px 18px;margin-bottom:16px;}
+    .form-title{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
+    .input-row{display:flex;gap:8px;margin-bottom:8px;}
+    .field-input{flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r-md);padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;}
+    .field-input:focus{border-color:var(--accent);}
+    .field-input::placeholder{color:var(--subtle);}
+    .save-btn{width:100%;padding:11px;background:var(--accent);border:none;border-radius:var(--r-md);color:#fff;font-family:var(--font-display);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+    .save-btn:hover{opacity:.88;}
+    .small-btn{padding:8px 14px;background:var(--accent);border:none;border-radius:var(--r-md);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+    .ghost-btn{padding:8px 14px;background:none;border:0.5px solid var(--border2);border-radius:var(--r-md);color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+    .ghost-btn:hover{border-color:var(--accent);color:var(--accent2);}
+
+    /* ── Progress bar (daily completion) ── */
+    .day-progress{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:16px;}
+    .day-prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .day-prog-title{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text);}
+    .day-prog-pct{font-size:12px;color:var(--accent2);font-weight:600;}
+    .day-prog-track{height:6px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+    .day-prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s;}
+    .day-prog-sub{font-size:11px;color:var(--muted);margin-top:6px;}
+
+    /* ── Timeline ── */
+    .timeline{position:relative;padding-left:52px;margin-bottom:8px;}
+    .timeline::before{content:'';position:absolute;left:22px;top:0;bottom:0;width:1px;background:var(--border);}
+    .tl-item{position:relative;margin-bottom:6px;}
+    .tl-time{position:absolute;left:-52px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);width:42px;text-align:right;font-weight:500;}
+    .tl-dot{position:absolute;left:-31px;top:50%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border2);transition:all .2s;}
+    .tl-dot.now{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,111,247,.25);}
+    .tl-dot.done{background:var(--green);border-color:var(--green);}
+    .tl-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);padding:10px 14px;display:flex;align-items:center;gap:10px;transition:background .1s;}
+    .tl-card:hover{background:var(--bg3);}
+    .tl-card.done-card{opacity:.5;}
+    .tl-emoji{font-size:18px;flex-shrink:0;}
+    .tl-info{flex:1;min-width:0;}
+    .tl-name{font-size:13px;font-weight:500;color:var(--text);}
+    .tl-dur{font-size:11px;color:var(--muted);margin-top:1px;}
+    .tl-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+    .tl-check.checked{background:var(--accent);border-color:var(--accent);}
+    .tl-del{background:none;border:none;color:var(--subtle);cursor:pointer;font-size:16px;padding:2px 5px;opacity:0;transition:opacity .15s,color .15s;flex-shrink:0;}
+    .tl-item:hover .tl-del{opacity:1;}
+    .tl-del:hover{color:var(--coral);}
+
+    /* ── Day selector ── */
+    .day-selector{display:flex;gap:5px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px;}
+    .day-btn{flex-shrink:0;padding:6px 14px;border-radius:99px;background:var(--surface);border:0.5px solid var(--border);color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;}
+    .day-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+    /* ── Habits ── */
+    .habit-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px;}
+    .habit-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .habit-left{display:flex;align-items:center;gap:10px;}
+    .habit-emoji{font-size:20px;}
+    .habit-name{font-size:14px;font-weight:500;color:var(--text);}
+    .habit-streak{font-size:11px;color:var(--accent2);font-weight:600;}
+    .habit-del{background:none;border:none;color:var(--subtle);cursor:pointer;font-size:18px;padding:2px 4px;opacity:0;transition:opacity .15s,color .15s;}
+    .habit-card:hover .habit-del{opacity:1;}
+    .habit-del:hover{color:var(--coral);}
+    .habit-week{display:flex;gap:5px;}
+    .habit-day{flex:1;aspect-ratio:1;border-radius:8px;background:var(--bg3);border:0.5px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:3px;transition:all .15s;min-width:0;}
+    .habit-day:hover{border-color:var(--border2);}
+    .habit-day.done{background:rgba(124,111,247,.2);border-color:var(--accent);}
+    .habit-day-lbl{font-size:9px;color:var(--muted);font-weight:600;}
+    .habit-day.done .habit-day-lbl{color:var(--accent2);}
+    .habit-day-check{font-size:11px;}
+    .habit-freq{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;}
+    .freq-chip{font-size:11px;padding:4px 10px;border-radius:99px;background:var(--bg3);border:0.5px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;}
+    .freq-chip.active{background:rgba(124,111,247,.15);border-color:var(--accent);color:var(--accent2);}
+
+    /* ── Empty state ── */
+    .empty-state{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px;}
+    .empty-icon{font-size:32px;margin-bottom:8px;}
+
+    /* ── Color picker ── */
+    .color-row{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;}
+    .color-opt{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0;}
+    .color-opt.selected{border-color:#fff;transform:scale(1.15);}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="page-header">
+    <a href="../index.html" class="page-header-back" aria-label="Voltar">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="10,3 5,8 10,13"/></svg>
+    </a>
+    <div>
+      <div class="page-title">🔄 Rotina</div>
+      <div class="page-subtitle" id="rotina-subtitle">carregando...</div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <div class="tab-bar fade-up">
+      <button class="tab-btn active" onclick="switchTab('horario',this)">Horário</button>
+      <button class="tab-btn" onclick="switchTab('habitos',this)">Hábitos</button>
+    </div>
+
+    <!-- ══════════════ HORÁRIO ══════════════ -->
+    <div id="tab-horario" class="tab-panel active">
+
+      <!-- Day selector -->
+      <div class="day-selector" id="day-selector"></div>
+
+      <!-- Daily progress -->
+      <div class="day-progress fade-up">
+        <div class="day-prog-header">
+          <span class="day-prog-title">Progresso do dia</span>
+          <span class="day-prog-pct" id="day-pct">0%</span>
+        </div>
+        <div class="day-prog-track"><div class="day-prog-fill" id="day-bar" style="width:0%;"></div></div>
+        <div class="day-prog-sub" id="day-sub">Nenhum item ainda.</div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="section-title">Atividades</div>
+      <div class="timeline" id="timeline-list"></div>
+
+      <!-- Add activity -->
+      <div class="add-form">
+        <div class="form-title">+ Adicionar atividade</div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="act-name" placeholder="Nome da atividade...">
+          <input type="text" class="field-input" id="act-emoji" placeholder="🕐" style="max-width:64px;">
+        </div>
+        <div class="input-row">
+          <input type="time" class="field-input" id="act-time">
+          <input type="text" class="field-input" id="act-dur" placeholder="Duração (ex: 1h, 30 min)">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Repetir nos dias</div>
+        <div class="habit-freq" id="act-days-sel">
+          <span class="freq-chip active" data-day="0" onclick="toggleActDay(this)">Dom</span>
+          <span class="freq-chip active" data-day="1" onclick="toggleActDay(this)">Seg</span>
+          <span class="freq-chip active" data-day="2" onclick="toggleActDay(this)">Ter</span>
+          <span class="freq-chip active" data-day="3" onclick="toggleActDay(this)">Qua</span>
+          <span class="freq-chip active" data-day="4" onclick="toggleActDay(this)">Qui</span>
+          <span class="freq-chip active" data-day="5" onclick="toggleActDay(this)">Sex</span>
+          <span class="freq-chip active" data-day="6" onclick="toggleActDay(this)">Sáb</span>
+        </div>
+        <button class="save-btn" onclick="addActivity()">Adicionar</button>
+      </div>
+    </div>
+
+    <!-- ══════════════ HÁBITOS ══════════════ -->
+    <div id="tab-habitos" class="tab-panel">
+
+      <!-- Habit list -->
+      <div class="section-title">Meus hábitos</div>
+      <div id="habit-list"></div>
+
+      <!-- Add habit -->
+      <div class="add-form">
+        <div class="form-title">+ Novo hábito</div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="hab-name" placeholder="Nome do hábito...">
+          <input type="text" class="field-input" id="hab-emoji" placeholder="⭐" style="max-width:64px;">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Cor</div>
+        <div class="color-row" id="hab-color-row">
+          <div class="color-opt selected" style="background:#7c6ff7;" data-color="#7c6ff7" onclick="selectHabColor(this)"></div>
+          <div class="color-opt" style="background:#34d399;" data-color="#34d399" onclick="selectHabColor(this)"></div>
+          <div class="color-opt" style="background:#fbbf24;" data-color="#fbbf24" onclick="selectHabColor(this)"></div>
+          <div class="color-opt" style="background:#f472b6;" data-color="#f472b6" onclick="selectHabColor(this)"></div>
+          <div class="color-opt" style="background:#60a5fa;" data-color="#60a5fa" onclick="selectHabColor(this)"></div>
+          <div class="color-opt" style="background:#f87171;" data-color="#f87171" onclick="selectHabColor(this)"></div>
+        </div>
+        <button class="save-btn" onclick="addHabit()">Criar hábito</button>
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <a href="../index.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Início</span></a>
+    <a href="calendario.html" class="nav-item"><span class="nav-icon">📅</span><span class="nav-label">Calendário</span></a>
+    <a href="rotina.html" class="nav-item active"><span class="nav-icon">🔄</span><span class="nav-label">Rotina</span></a>
+    <a href="basquete.html" class="nav-item"><span class="nav-icon">🏀</span><span class="nav-label">Basquete</span></a>
+    <a href="estudos.html" class="nav-item"><span class="nav-icon">📚</span><span class="nav-label">Estudos</span></a>
+  </nav>
+</div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────
+const DIAS_FULL  = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const DIAS_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const now = new Date();
+
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Storage ──────────────────────────────────────────────────
+function getActivities(){ return JSON.parse(localStorage.getItem('rot_activities')||'[]'); }
+function saveActivities(d){ localStorage.setItem('rot_activities',JSON.stringify(d)); }
+function getDoneKey(dayIdx){ return 'rot_done_'+new Date(now.getFullYear(),now.getMonth(),now.getDate()-now.getDay()+dayIdx).toISOString().split('T')[0]; }
+function getDone(dayIdx){ return JSON.parse(localStorage.getItem(getDoneKey(dayIdx))||'[]'); }
+function saveDone(dayIdx,d){ localStorage.setItem(getDoneKey(dayIdx),JSON.stringify(d)); }
+function getHabits(){ return JSON.parse(localStorage.getItem('rot_habits2')||'[]'); }
+function saveHabits(d){ localStorage.setItem('rot_habits2',JSON.stringify(d)); }
+function getHabitDone(hId,dateStr){ return JSON.parse(localStorage.getItem('rot_hd_'+hId+'_'+dateStr)||'false'); }
+function setHabitDone(hId,dateStr,val){ localStorage.setItem('rot_hd_'+hId+'_'+dateStr,JSON.stringify(val)); }
+
+// ── Selected day ──────────────────────────────────────────────
+let selectedDayIdx = now.getDay(); // 0=Sun … 6=Sat
+
+function renderDaySelector(){
+  const sel = document.getElementById('day-selector');
+  sel.innerHTML = DIAS_SHORT.map((d,i)=>`
+    <button class="day-btn ${i===selectedDayIdx?'active':''}" onclick="selectDay(${i})">${d}</button>
+  `).join('');
+  // Subtitle
+  const d=new Date(now); d.setDate(now.getDate()-now.getDay()+selectedDayIdx);
+  document.getElementById('rotina-subtitle').textContent=DIAS_FULL[selectedDayIdx]+', '+d.toLocaleDateString('pt-BR',{day:'2-digit',month:'long'});
+}
+
+function selectDay(idx){
+  selectedDayIdx = idx;
+  renderDaySelector();
+  renderTimeline();
+}
+
+// ── Activity day chips ────────────────────────────────────────
+function toggleActDay(el){
+  el.classList.toggle('active');
+}
+
+function getSelectedActDays(){
+  return [...document.querySelectorAll('#act-days-sel .freq-chip.active')].map(el=>parseInt(el.dataset.day));
+}
+
+// ── Add activity ──────────────────────────────────────────────
+function addActivity(){
+  const name  = document.getElementById('act-name').value.trim();
+  const emoji = document.getElementById('act-emoji').value.trim() || '🕐';
+  const time  = document.getElementById('act-time').value;
+  const dur   = document.getElementById('act-dur').value.trim();
+  const days  = getSelectedActDays();
+  if(!name) return;
+  const acts = getActivities();
+  acts.push({ id:'act_'+Date.now(), name, emoji, time, dur, days });
+  // Sort by time
+  acts.sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  saveActivities(acts);
+  document.getElementById('act-name').value='';
+  document.getElementById('act-emoji').value='';
+  document.getElementById('act-time').value='';
+  document.getElementById('act-dur').value='';
+  renderTimeline();
+}
+
+function deleteActivity(id){
+  saveActivities(getActivities().filter(a=>a.id!==id));
+  renderTimeline();
+}
+
+function toggleActivity(id){
+  const done = getDone(selectedDayIdx);
+  const idx = done.indexOf(id);
+  if(idx>-1) done.splice(idx,1); else done.push(id);
+  saveDone(selectedDayIdx, done);
+  renderTimeline();
+}
+
+// ── Render timeline ───────────────────────────────────────────
+function renderTimeline(){
+  const acts = getActivities().filter(a=>a.days.includes(selectedDayIdx));
+  const done = getDone(selectedDayIdx);
+  const nowMin = now.getHours()*60+now.getMinutes();
+  const isToday = selectedDayIdx === now.getDay();
+
+  // Progress
+  const total = acts.length;
+  const doneCount = acts.filter(a=>done.includes(a.id)).length;
+  const pct = total ? Math.round((doneCount/total)*100) : 0;
+  document.getElementById('day-pct').textContent = pct+'%';
+  document.getElementById('day-bar').style.width = pct+'%';
+  document.getElementById('day-sub').textContent = total
+    ? `${doneCount} de ${total} atividade${total>1?'s':''} concluída${doneCount!==1?'s':''}`
+    : 'Nenhuma atividade para este dia.';
+
+  const el = document.getElementById('timeline-list');
+  if(!acts.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div>Nenhuma atividade para ${DIAS_FULL[selectedDayIdx]}.<br>Adicione uma abaixo!</div>`;
+    return;
+  }
+
+  el.innerHTML = acts.map(a=>{
+    const isDone = done.includes(a.id);
+    const timeMin = a.time ? parseInt(a.time.split(':')[0])*60+parseInt(a.time.split(':')[1]) : -1;
+    const isNow = isToday && timeMin>=0 && Math.abs(timeMin-nowMin)<45 && nowMin>=timeMin;
+    return `
+    <div class="tl-item">
+      <span class="tl-time">${a.time||''}</span>
+      <div class="tl-dot ${isDone?'done':isNow?'now':''}"></div>
+      <div class="tl-card ${isDone?'done-card':''}">
+        <span class="tl-emoji">${a.emoji}</span>
+        <div class="tl-info">
+          <div class="tl-name">${a.name}</div>
+          ${a.dur?`<div class="tl-dur">${a.dur}</div>`:''}
+        </div>
+        <button class="tl-check ${isDone?'checked':''}" onclick="toggleActivity('${a.id}')" aria-label="Marcar">
+          ${isDone?'<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
+        </button>
+        <button class="tl-del" onclick="deleteActivity('${a.id}')">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Habits ───────────────────────────────────────────────────
+let selectedHabColor = '#7c6ff7';
+
+function selectHabColor(el){
+  document.querySelectorAll('#hab-color-row .color-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedHabColor = el.dataset.color;
+}
+
+function addHabit(){
+  const name  = document.getElementById('hab-name').value.trim();
+  const emoji = document.getElementById('hab-emoji').value.trim() || '⭐';
+  if(!name) return;
+  const habits = getHabits();
+  habits.push({ id:'hab_'+Date.now(), name, emoji, color: selectedHabColor });
+  saveHabits(habits);
+  document.getElementById('hab-name').value='';
+  document.getElementById('hab-emoji').value='';
+  renderHabits();
+}
+
+function deleteHabit(id){
+  saveHabits(getHabits().filter(h=>h.id!==id));
+  renderHabits();
+}
+
+function toggleHabitDay(hId, dateStr){
+  const cur = getHabitDone(hId, dateStr);
+  setHabitDone(hId, dateStr, !cur);
+  renderHabits();
+}
+
+function getWeekDates(){
+  const dates = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(now);
+    d.setDate(now.getDate()-now.getDay()+i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  return dates;
+}
+
+function calcStreak(hId){
+  let streak = 0;
+  const d = new Date(now);
+  for(let i=0;i<60;i++){
+    const dateStr = d.toISOString().split('T')[0];
+    if(getHabitDone(hId, dateStr)){ streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+
+function renderHabits(){
+  const habits = getHabits();
+  const el = document.getElementById('habit-list');
+  if(!habits.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🌱</div>Nenhum hábito ainda.<br>Crie um abaixo!</div>`;
+    return;
+  }
+  const weekDates = getWeekDates();
+  el.innerHTML = habits.map(h=>{
+    const streak = calcStreak(h.id);
+    return `
+    <div class="habit-card">
+      <div class="habit-header">
+        <div class="habit-left">
+          <span class="habit-emoji">${h.emoji}</span>
+          <div>
+            <div class="habit-name">${h.name}</div>
+            <div class="habit-streak">🔥 ${streak} dia${streak!==1?'s':''} seguido${streak!==1?'s':''}</div>
+          </div>
+        </div>
+        <button class="habit-del" onclick="deleteHabit('${h.id}')">×</button>
+      </div>
+      <div class="habit-week">
+        ${weekDates.map((date,i)=>{
+          const done = getHabitDone(h.id, date);
+          return `<div class="habit-day ${done?'done':''}" onclick="toggleHabitDay('${h.id}','${date}')">
+            <span class="habit-day-lbl">${DIAS_SHORT[i]}</span>
+            <span class="habit-day-check" style="color:${done?h.color:'var(--subtle)'};">${done?'✓':'·'}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Init ─────────────────────────────────────────────────────
+renderDaySelector();
+renderTimeline();
+renderHabits();
+</script>
+</body>
+</html>

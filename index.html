@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Life Organizer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- Header -->
+  <header class="top-header">
+    <div class="app-logo">Life<span>.</span></div>
+    <div class="header-actions">
+      <a href="pages/calendario.html" class="icon-btn" title="Calendário" aria-label="Ir para calendário">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <rect x="1" y="2" width="14" height="13" rx="2"/>
+          <line x1="5" y1="1" x2="5" y2="4"/>
+          <line x1="11" y1="1" x2="11" y2="4"/>
+          <line x1="1" y1="7" x2="15" y2="7"/>
+        </svg>
+      </a>
+      <a href="pages/rotina.html" class="icon-btn" title="Rotina" aria-label="Ir para rotina">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.5"/>
+          <polyline points="8,4.5 8,8 10.5,10"/>
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- Clock -->
+    <section class="clock-section fade-up">
+      <div class="clock-display">
+        <span id="clock">09:09</span>
+        <span class="clock-sec" id="clock-sec">:09</span>
+      </div>
+      <p class="date-label" id="date-label">carregando...</p>
+    </section>
+
+    <!-- Quote -->
+    <div class="quote-card fade-up delay-1">
+      <p class="quote-text" id="quote-text">"Carregando frase..."</p>
+      <p class="quote-author" id="quote-author"></p>
+    </div>
+    
+    <!-- Streak -->
+    <div class="streak-card fade-up delay-2">
+      <div class="streak-info">
+        <div class="streak-count" id="streak-count">🔥 0 dias seguidos</div>
+        <div class="streak-dots" id="streak-dots"></div>
+      </div>
+    </div>
+
+    <!-- Today's Tasks -->
+    <section class="fade-up delay-3">
+      <div class="section-title">
+        Daily Tasks
+        <span id="progress-label"></span>
+      </div>
+
+      <div class="tasks-card">
+        <div class="tasks-header">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-bar"></div>
+          </div>
+        </div>
+
+        <div id="task-list"></div>
+
+        <div class="add-task-form">
+          <input
+            type="text"
+            id="new-task-input"
+            class="add-task-input"
+            placeholder="Adicionar tarefa..."
+            maxlength="80"
+          >
+          <select id="new-task-tag" class="add-task-select">
+            <option value="basquete">🏀 Basquete</option>
+            <option value="faculdade">📚 Faculdade</option>
+            <option value="pessoal" selected>⭐ Pessoal</option>
+            <option value="financeiro">💰 Financeiro</option>
+            <option value="projeto">🚀 Projeto</option>
+            <option value="outro">📌 Outro</option>
+          </select>
+          <button class="add-task-btn" onclick="addTask()" aria-label="Adicionar tarefa">+</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sections -->
+    <div class="section-title fade-up delay-4">Seções</div>
+
+    <div class="sections-grid fade-up delay-5">
+
+      <a href="pages/basquete.html" class="section-card basketball">
+        <div class="section-icon" style="background: rgba(124,111,247,0.15);">🏀</div>
+        <div class="section-card-name">Basquete</div>
+        <div class="section-card-desc">Treinos · academia · film study</div>
+      </a>
+
+      <a href="pages/estudos.html" class="section-card estudos">
+        <div class="section-icon" style="background: rgba(52,211,153,0.12);">📚</div>
+        <div class="section-card-name">Estudos</div>
+        <div class="section-card-desc">Faculdade · livros · pomodoro</div>
+      </a>
+
+      <a href="pages/financeiro.html" class="section-card financeiro">
+        <div class="section-icon" style="background: rgba(251,191,36,0.12);">💰</div>
+        <div class="section-card-name">Financeiro</div>
+        <div class="section-card-desc">Gastos · receitas · metas</div>
+      </a>
+
+      <a href="pages/rotina.html" class="section-card rotina">
+        <div class="section-icon" style="background: rgba(244,114,182,0.12);">🔄</div>
+        <div class="section-card-name">Rotina</div>
+        <div class="section-card-desc">Hábitos · horários diários</div>
+      </a>
+
+      <a href="pages/projetos.html" class="section-card projetos">
+        <div class="section-icon" style="background: rgba(124,111,247,0.12);">🚀</div>
+        <div class="section-card-name">Projetos</div>
+        <div class="section-card-desc">Kanban · app de basquete</div>
+      </a>
+
+      <a href="pages/metas.html" class="section-card metas">
+        <div class="section-icon" style="background: rgba(248,113,113,0.12);">🎯</div>
+        <div class="section-card-name">Metas</div>
+        <div class="section-card-desc">Curto e longo prazo</div>
+      </a>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <a href="../index.html" class="nav-item active" data-page="index.html">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Início</span>
+    </a>
+    <a href="pages/calendario.html" class="nav-item" data-page="calendario.html">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">Calendário</span>
+    </a>
+    <a href="pages/rotina.html" class="nav-item" data-page="rotina.html">
+      <span class="nav-icon">🔄</span>
+      <span class="nav-label">Rotina</span>
+    </a>
+    <a href="pages/basquete.html" class="nav-item" data-page="basquete.html">
+      <span class="nav-icon">🏀</span>
+      <span class="nav-label">Basquete</span>
+    </a>
+    <a href="pages/estudos.html" class="nav-item" data-page="estudos.html">
+      <span class="nav-icon">📚</span>
+      <span class="nav-label">Estudos</span>
+    </a>
+  </nav>
+
+</div>
+
+<script src="data/frases.js"></script>
+<script src="js/main.js"></script>
+
+
+<script>
+let atual = 0;
+
+function trocarFrase() {
+    const frase = frases[atual];
+
+    document.getElementById("quote-text").innerText =
+        `"${frase.texto}"`;
+
+    document.getElementById("quote-author").innerText =
+        `— ${frase.autor}`;
+
+    atual++;
+
+    if (atual >= frases.length) {
+        atual = 0;
+    }
+}
+
+trocarFrase();
+
+// troca a cada 15 minutos
+setInterval(trocarFrase, 15 * 60 * 1000);
+</script>
+    <script>
+function atualizarRelogio() {
+    const agora = new Date();
+
+    let horas = String(agora.getHours()).padStart(2,'0');
+    let minutos = String(agora.getMinutes()).padStart(2,'0');
+    let segundos = String(agora.getSeconds()).padStart(2,'0');
+
+    const data = agora.toLocaleDateString('pt-BR',{
+        weekday:'long',
+        day:'numeric',
+        month:'long'
+    });
+
+    document.getElementById("clock").innerText =
+        `${horas}:${minutos}`;
+
+    document.getElementById("clock-sec").innerText =
+        `:${segundos}`;
+
+    document.getElementById("date-label").innerText =
+        data;
+}
+
+atualizarRelogio();
+
+setInterval(atualizarRelogio,1000);
+</script>
+</body>
+</html>

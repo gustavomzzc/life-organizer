@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendário — Life Organizer</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .cal-month { font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--text); }
+    .cal-arrow { width:34px; height:34px; background:var(--surface); border:0.5px solid var(--border2); border-radius:var(--r-md); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+    .cal-arrow:hover { color:var(--text); background:var(--surface2); }
+
+    .cal-grid { background:var(--surface); border:0.5px solid var(--border); border-radius:var(--r-xl); overflow:hidden; margin-bottom:20px; }
+    .cal-days-header { display:grid; grid-template-columns:repeat(7,1fr); }
+    .cal-day-label { text-align:center; font-size:10px; font-weight:600; color:var(--subtle); padding:10px 0 6px; text-transform:uppercase; letter-spacing:0.5px; }
+    .cal-cells { display:grid; grid-template-columns:repeat(7,1fr); }
+    .cal-cell { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; border-radius:var(--r-md); margin:2px; transition:background 0.15s; position:relative; }
+    .cal-cell:hover { background:var(--bg3); }
+    .cal-cell.other-month .cal-num { color:var(--subtle); }
+    .cal-cell.today { background:var(--accent); }
+    .cal-cell.today .cal-num { color:white; font-weight:800; }
+    .cal-cell.selected { background:rgba(124,111,247,0.2); border:1px solid var(--accent); }
+    .cal-cell.has-event::after { content:''; width:4px; height:4px; border-radius:50%; background:var(--accent2); position:absolute; bottom:3px; }
+    .cal-cell.today.has-event::after { background:rgba(255,255,255,0.7); }
+    .cal-num { font-size:14px; font-weight:500; color:var(--text); }
+
+    .events-section { margin-bottom:20px; }
+    .event-row { display:flex; align-items:center; gap:12px; background:var(--surface); border:0.5px solid var(--border); border-radius:var(--r-lg); padding:12px 16px; margin-bottom:8px; }
+    .event-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .event-info { flex:1; }
+    .event-name { font-size:13px; font-weight:500; color:var(--text); }
+    .event-time { font-size:11px; color:var(--muted); margin-top:1px; }
+    .event-del { background:none; border:none; color:var(--subtle); cursor:pointer; font-size:16px; padding:2px 6px; border-radius:var(--r-sm); transition:color 0.15s; }
+    .event-del:hover { color:var(--coral); }
+
+    .add-event-form { background:var(--surface); border:0.5px solid var(--border); border-radius:var(--r-xl); padding:16px 18px; }
+    .form-title { font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text); margin-bottom:12px; }
+    .input-row { display:flex; gap:8px; margin-bottom:8px; }
+    .field-input { flex:1; background:var(--bg3); border:0.5px solid var(--border2); border-radius:var(--r-md); padding:9px 12px; color:var(--text); font-family:var(--font-body); font-size:13px; outline:none; }
+    .field-input:focus { border-color:var(--accent); }
+    .field-input::placeholder { color:var(--subtle); }
+    .save-btn { width:100%; padding:11px; background:var(--accent); border:none; border-radius:var(--r-md); color:white; font-family:var(--font-display); font-size:14px; font-weight:700; cursor:pointer; }
+    .save-btn:hover { opacity:0.88; }
+
+    .color-opts { display:flex; gap:8px; margin-bottom:10px; }
+    .color-opt { width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:all 0.15s; }
+    .color-opt.selected { border-color:white; transform:scale(1.15); }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="page-header">
+    <a href="../index.html" class="page-header-back" aria-label="Voltar">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="10,3 5,8 10,13"/></svg>
+    </a>
+    <div>
+      <div class="page-title">📅 Calendário</div>
+      <div class="page-subtitle">Eventos e compromissos</div>
+    </div>
+  </header>
+
+  <main class="page-content">
+    <div class="cal-nav fade-up">
+      <div class="cal-arrow" onclick="changeMonth(-1)">‹</div>
+      <div class="cal-month" id="cal-month-label"></div>
+      <div class="cal-arrow" onclick="changeMonth(1)">›</div>
+    </div>
+
+    <div class="cal-grid fade-up">
+      <div class="cal-days-header">
+        <div class="cal-day-label">Dom</div>
+        <div class="cal-day-label">Seg</div>
+        <div class="cal-day-label">Ter</div>
+        <div class="cal-day-label">Qua</div>
+        <div class="cal-day-label">Qui</div>
+        <div class="cal-day-label">Sex</div>
+        <div class="cal-day-label">Sáb</div>
+      </div>
+      <div class="cal-cells" id="cal-cells"></div>
+    </div>
+
+    <div class="section-title fade-up" id="events-label">Eventos de hoje</div>
+    <div class="events-section fade-up" id="events-list"></div>
+
+    <div class="add-event-form fade-up">
+      <div class="form-title" id="add-form-title">+ Evento para hoje</div>
+      <div class="input-row">
+        <input type="text" class="field-input" id="ev-name" placeholder="Nome do evento...">
+        <input type="text" class="field-input" id="ev-time" placeholder="Hora (ex: 14:00)" style="max-width:110px;">
+      </div>
+      <div class="color-opts" id="color-opts">
+        <div class="color-opt selected" style="background:#7c6ff7;" data-color="#7c6ff7" onclick="selectColor(this)"></div>
+        <div class="color-opt" style="background:#34d399;" data-color="#34d399" onclick="selectColor(this)"></div>
+        <div class="color-opt" style="background:#fbbf24;" data-color="#fbbf24" onclick="selectColor(this)"></div>
+        <div class="color-opt" style="background:#f472b6;" data-color="#f472b6" onclick="selectColor(this)"></div>
+        <div class="color-opt" style="background:#f87171;" data-color="#f87171" onclick="selectColor(this)"></div>
+      </div>
+      <button class="save-btn" onclick="addEvent()">Adicionar evento</button>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <a href="../index.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Início</span></a>
+    <a href="calendario.html" class="nav-item active"><span class="nav-icon">📅</span><span class="nav-label">Calendário</span></a>
+    <a href="rotina.html" class="nav-item"><span class="nav-icon">🔄</span><span class="nav-label">Rotina</span></a>
+    <a href="basquete.html" class="nav-item"><span class="nav-icon">🏀</span><span class="nav-label">Basquete</span></a>
+    <a href="estudos.html" class="nav-item"><span class="nav-icon">📚</span><span class="nav-label">Estudos</span></a>
+  </nav>
+</div>
+
+<script>
+const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let currentDate = new Date();
+let viewYear = currentDate.getFullYear();
+let viewMonth = currentDate.getMonth();
+let selectedDay = null;
+let selectedColor = '#7c6ff7';
+
+function dateKey(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function todayKey() { return dateKey(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()); }
+
+function getEvents() { return JSON.parse(localStorage.getItem('cal_events') || '{}'); }
+function saveEvents(e) { localStorage.setItem('cal_events', JSON.stringify(e)); }
+
+function selectColor(el) {
+  document.querySelectorAll('.color-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedColor = el.dataset.color;
+}
+
+function changeMonth(d) {
+  viewMonth += d;
+  if (viewMonth > 11) { viewMonth=0; viewYear++; }
+  if (viewMonth < 0)  { viewMonth=11; viewYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  document.getElementById('cal-month-label').textContent = `${meses[viewMonth]} ${viewYear}`;
+  const events = getEvents();
+  const first = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  const prevDays = new Date(viewYear, viewMonth, 0).getDate();
+  const cells = document.getElementById('cal-cells');
+  cells.innerHTML = '';
+  let total = first + daysInMonth;
+  if (total % 7 !== 0) total += 7 - (total % 7);
+
+  for (let i=0; i<total; i++) {
+    let day, month=viewMonth, year=viewYear, other=false;
+    if (i < first) { day=prevDays-first+i+1; month=viewMonth-1; other=true; if(month<0){month=11;year--;} }
+    else if (i >= first+daysInMonth) { day=i-first-daysInMonth+1; month=viewMonth+1; other=true; if(month>11){month=0;year++;} }
+    else { day=i-first+1; }
+    const dk = dateKey(year, month, day);
+    const isToday = dk === todayKey();
+    const isSelected = selectedDay === dk;
+    const hasEvt = events[dk] && events[dk].length > 0;
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' + (other?' other-month':'') + (isToday?' today':'') + (isSelected?' selected':'') + (hasEvt?' has-event':'');
+    cell.innerHTML = `<span class="cal-num">${day}</span>`;
+    cell.onclick = () => selectDay(dk);
+    cells.appendChild(cell);
+  }
+
+  if (selectedDay) renderEvents(selectedDay);
+  else renderEvents(todayKey());
+}
+
+function selectDay(dk) {
+  selectedDay = dk;
+  renderCalendar();
+  renderEvents(dk);
+}
+
+function renderEvents(dk) {
+  const events = getEvents();
+  const evs = events[dk] || [];
+  const [y,m,d] = dk.split('-');
+  const label = `${parseInt(d)} de ${meses[parseInt(m)-1]}`;
+  const isToday = dk === todayKey();
+  document.getElementById('events-label').textContent = isToday ? `Eventos de hoje — ${label}` : `Eventos — ${label}`;
+  document.getElementById('add-form-title').textContent = `+ Evento para ${isToday?'hoje':label}`;
+  const list = document.getElementById('events-list');
+  if (!evs.length) {
+    list.innerHTML = `<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px;">Nenhum evento neste dia.</div>`;
+    return;
+  }
+  list.innerHTML = evs.map((ev,i) => `
+    <div class="event-row">
+      <div class="event-dot" style="background:${ev.color};"></div>
+      <div class="event-info">
+        <div class="event-name">${ev.name}</div>
+        ${ev.time ? `<div class="event-time">⏰ ${ev.time}</div>` : ''}
+      </div>
+      <button class="event-del" onclick="deleteEvent('${dk}',${i})">×</button>
+    </div>`).join('');
+}
+
+function addEvent() {
+  const name = document.getElementById('ev-name').value.trim();
+  const time = document.getElementById('ev-time').value.trim();
+  if (!name) return;
+  const dk = selectedDay || todayKey();
+  const events = getEvents();
+  if (!events[dk]) events[dk]=[];
+  events[dk].push({ name, time, color: selectedColor });
+  saveEvents(events);
+  document.getElementById('ev-name').value='';
+  document.getElementById('ev-time').value='';
+  renderCalendar();
+}
+
+function deleteEvent(dk, idx) {
+  const events = getEvents();
+  events[dk].splice(idx,1);
+  if (!events[dk].length) delete events[dk];
+  saveEvents(events);
+  renderCalendar();
+}
+
+renderCalendar();
+</script>
+</body>
+</html>

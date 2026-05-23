@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metas — Life Organizer</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .tab-bar{display:flex;gap:6px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:5px;margin-bottom:20px;}
+    .tab-btn{flex:1;background:none;border:none;padding:8px 6px;border-radius:var(--r-md);font-family:var(--font-body);font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;}
+    .tab-btn.active{background:var(--accent);color:#fff;}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
+
+    /* ── Forms ── */
+    .add-form{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-xl);padding:16px 18px;margin-bottom:16px;}
+    .form-title{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
+    .input-row{display:flex;gap:8px;margin-bottom:8px;}
+    .field-input{flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r-md);padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;}
+    .field-input:focus{border-color:var(--accent);}
+    .field-input::placeholder{color:var(--subtle);}
+    .save-btn{width:100%;padding:11px;background:var(--accent);border:none;border-radius:var(--r-md);color:#fff;font-family:var(--font-display);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+    .save-btn:hover{opacity:.88;}
+    .small-btn{padding:8px 14px;background:var(--accent);border:none;border-radius:var(--r-md);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+    .ghost-btn{padding:8px 14px;background:none;border:0.5px solid var(--border2);border-radius:var(--r-md);color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+    .ghost-btn:hover{border-color:var(--coral);color:var(--coral);}
+
+    /* ── Goal card ── */
+    .goal-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-xl);margin-bottom:14px;overflow:hidden;transition:border-color .15s;}
+    .goal-card:hover{border-color:var(--border2);}
+    .goal-header{padding:16px 18px 12px;}
+    .goal-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;}
+    .goal-emoji{font-size:24px;flex-shrink:0;line-height:1;}
+    .goal-info{flex:1;min-width:0;}
+    .goal-title{font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--text);line-height:1.2;}
+    .goal-desc{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5;}
+    .goal-deadline{font-size:11px;color:var(--muted);margin-top:5px;}
+    .goal-del{background:none;border:none;color:var(--subtle);cursor:pointer;font-size:18px;padding:2px 5px;opacity:0;transition:opacity .15s,color .15s;flex-shrink:0;}
+    .goal-card:hover .goal-del{opacity:1;}
+    .goal-del:hover{color:var(--coral);}
+
+    /* ── Progress bar ── */
+    .goal-progress{padding:0 18px 14px;}
+    .goal-prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+    .goal-prog-pct{font-family:var(--font-display);font-size:13px;font-weight:700;}
+    .goal-prog-count{font-size:11px;color:var(--muted);}
+    .goal-bar-track{height:7px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+    .goal-bar-fill{height:100%;border-radius:99px;transition:width .5s ease;}
+
+    /* ── Mini goals (sub-tasks) ── */
+    .mini-goals{border-top:0.5px solid var(--border);}
+    .mini-goal-row{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:0.5px solid var(--border);transition:background .1s;}
+    .mini-goal-row:last-child{border-bottom:none;}
+    .mini-goal-row:hover{background:var(--bg3);}
+    .mini-check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border2);background:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+    .mini-check.checked{border-color:var(--accent);background:var(--accent);}
+    .mini-check:hover{border-color:var(--accent);}
+    .mini-label{flex:1;font-size:13px;color:var(--text);transition:opacity .2s;}
+    .mini-label.done{opacity:.38;text-decoration:line-through;}
+    .mini-del{background:none;border:none;color:var(--subtle);cursor:pointer;font-size:14px;padding:2px 5px;opacity:0;transition:opacity .15s,color .15s;}
+    .mini-goal-row:hover .mini-del{opacity:1;}
+    .mini-del:hover{color:var(--coral);}
+
+    /* ── Add mini goal ── */
+    .add-mini-row{display:flex;gap:7px;padding:10px 18px;background:var(--bg3);border-top:0.5px solid var(--border);}
+    .mini-input{flex:1;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r-md);padding:7px 11px;color:var(--text);font-family:var(--font-body);font-size:12px;outline:none;}
+    .mini-input:focus{border-color:var(--accent);}
+    .mini-input::placeholder{color:var(--subtle);}
+    .mini-add-btn{width:30px;height:30px;background:var(--accent);border:none;border-radius:var(--r-md);color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:opacity .15s;}
+    .mini-add-btn:hover{opacity:.85;}
+
+    /* ── Color chips ── */
+    .color-row{display:flex;gap:7px;margin-bottom:10px;}
+    .color-opt{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0;}
+    .color-opt.selected{border-color:#fff;transform:scale(1.15);}
+
+    /* ── Empty ── */
+    .empty-state{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px;}
+    .empty-icon{font-size:32px;margin-bottom:8px;}
+
+    /* ── Completed badge ── */
+    .completed-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;background:rgba(74,222,128,.12);color:var(--green);margin-left:auto;flex-shrink:0;}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="page-header">
+    <a href="../index.html" class="page-header-back" aria-label="Voltar">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="10,3 5,8 10,13"/></svg>
+    </a>
+    <div>
+      <div class="page-title">🎯 Metas</div>
+      <div class="page-subtitle">Curto e longo prazo</div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <div class="tab-bar fade-up">
+      <button class="tab-btn active" onclick="switchTab('curto',this)">Curto prazo</button>
+      <button class="tab-btn" onclick="switchTab('longo',this)">Longo prazo</button>
+    </div>
+
+    <!-- ══════════ CURTO PRAZO ══════════ -->
+    <div id="tab-curto" class="tab-panel active">
+      <div class="section-title">Metas de 1–3 meses</div>
+      <div id="list-curto"></div>
+      <div class="add-form">
+        <div class="form-title">+ Nova meta de curto prazo</div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="sc-title" placeholder="Título da meta...">
+          <input type="text" class="field-input" id="sc-emoji" placeholder="🎯" style="max-width:62px;">
+        </div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="sc-desc" placeholder="Descrição (opcional)...">
+        </div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="sc-deadline" placeholder="Prazo (ex: 30 jun)">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Cor da barra</div>
+        <div class="color-row" id="sc-color-row">
+          <div class="color-opt selected" style="background:#7c6ff7;" data-color="#7c6ff7" onclick="selectColor(this,'sc')"></div>
+          <div class="color-opt" style="background:#34d399;" data-color="#34d399" onclick="selectColor(this,'sc')"></div>
+          <div class="color-opt" style="background:#fbbf24;" data-color="#fbbf24" onclick="selectColor(this,'sc')"></div>
+          <div class="color-opt" style="background:#f472b6;" data-color="#f472b6" onclick="selectColor(this,'sc')"></div>
+          <div class="color-opt" style="background:#60a5fa;" data-color="#60a5fa" onclick="selectColor(this,'sc')"></div>
+          <div class="color-opt" style="background:#f87171;" data-color="#f87171" onclick="selectColor(this,'sc')"></div>
+        </div>
+        <input type="hidden" id="sc-color" value="#7c6ff7">
+        <button class="save-btn" onclick="addGoal('curto')">Adicionar meta</button>
+      </div>
+    </div>
+
+    <!-- ══════════ LONGO PRAZO ══════════ -->
+    <div id="tab-longo" class="tab-panel">
+      <div class="section-title">Metas de 6 meses — 2 anos</div>
+      <div id="list-longo"></div>
+      <div class="add-form">
+        <div class="form-title">+ Nova meta de longo prazo</div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="lg-title" placeholder="Título da meta...">
+          <input type="text" class="field-input" id="lg-emoji" placeholder="🌟" style="max-width:62px;">
+        </div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="lg-desc" placeholder="Descrição (opcional)...">
+        </div>
+        <div class="input-row">
+          <input type="text" class="field-input" id="lg-deadline" placeholder="Prazo (ex: dez 2026)">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Cor da barra</div>
+        <div class="color-row" id="lg-color-row">
+          <div class="color-opt selected" style="background:#7c6ff7;" data-color="#7c6ff7" onclick="selectColor(this,'lg')"></div>
+          <div class="color-opt" style="background:#34d399;" data-color="#34d399" onclick="selectColor(this,'lg')"></div>
+          <div class="color-opt" style="background:#fbbf24;" data-color="#fbbf24" onclick="selectColor(this,'lg')"></div>
+          <div class="color-opt" style="background:#f472b6;" data-color="#f472b6" onclick="selectColor(this,'lg')"></div>
+          <div class="color-opt" style="background:#60a5fa;" data-color="#60a5fa" onclick="selectColor(this,'lg')"></div>
+          <div class="color-opt" style="background:#f87171;" data-color="#f87171" onclick="selectColor(this,'lg')"></div>
+        </div>
+        <input type="hidden" id="lg-color" value="#7c6ff7">
+        <button class="save-btn" onclick="addGoal('longo')">Adicionar meta</button>
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <a href="../index.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Início</span></a>
+    <a href="calendario.html" class="nav-item"><span class="nav-icon">📅</span><span class="nav-label">Calendário</span></a>
+    <a href="rotina.html" class="nav-item"><span class="nav-icon">🔄</span><span class="nav-label">Rotina</span></a>
+    <a href="basquete.html" class="nav-item"><span class="nav-icon">🏀</span><span class="nav-label">Basquete</span></a>
+    <a href="estudos.html" class="nav-item"><span class="nav-icon">📚</span><span class="nav-label">Estudos</span></a>
+  </nav>
+</div>
+
+<script>
+// ── Tab ──────────────────────────────────────────────────────
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Color picker ─────────────────────────────────────────────
+function selectColor(el, prefix){
+  el.closest('.color-row').querySelectorAll('.color-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById(prefix+'-color').value = el.dataset.color;
+}
+
+// ── Storage ──────────────────────────────────────────────────
+function getGoals(type){ return JSON.parse(localStorage.getItem('goals3_'+type)||'[]'); }
+function saveGoals(type,d){ localStorage.setItem('goals3_'+type,JSON.stringify(d)); }
+
+// ── Add goal ─────────────────────────────────────────────────
+function addGoal(type){
+  const p = type==='curto'?'sc':'lg';
+  const title    = document.getElementById(p+'-title').value.trim();
+  const emoji    = document.getElementById(p+'-emoji').value.trim() || '🎯';
+  const desc     = document.getElementById(p+'-desc').value.trim();
+  const deadline = document.getElementById(p+'-deadline').value.trim();
+  const color    = document.getElementById(p+'-color').value;
+  if(!title) return;
+  const goals = getGoals(type);
+  goals.push({ id:'g_'+Date.now(), title, emoji, desc, deadline, color, minis:[] });
+  saveGoals(type, goals);
+  document.getElementById(p+'-title').value='';
+  document.getElementById(p+'-emoji').value='';
+  document.getElementById(p+'-desc').value='';
+  document.getElementById(p+'-deadline').value='';
+  renderGoals(type);
+}
+
+function deleteGoal(type, gId){
+  saveGoals(type, getGoals(type).filter(g=>g.id!==gId));
+  renderGoals(type);
+}
+
+// ── Mini goals ───────────────────────────────────────────────
+function addMini(type, gId){
+  const input = document.getElementById('mini-input-'+gId);
+  const text = input.value.trim();
+  if(!text) return;
+  const goals = getGoals(type);
+  const g = goals.find(g=>g.id===gId);
+  if(!g) return;
+  g.minis.push({ id:'m_'+Date.now(), text, done:false });
+  saveGoals(type, goals);
+  input.value='';
+  renderGoals(type);
+}
+
+function toggleMini(type, gId, mId){
+  const goals = getGoals(type);
+  const g = goals.find(g=>g.id===gId);
+  if(!g) return;
+  const m = g.minis.find(m=>m.id===mId);
+  if(!m) return;
+  m.done = !m.done;
+  saveGoals(type, goals);
+  renderGoals(type);
+}
+
+function deleteMini(type, gId, mId){
+  const goals = getGoals(type);
+  const g = goals.find(g=>g.id===gId);
+  if(!g) return;
+  g.minis = g.minis.filter(m=>m.id!==mId);
+  saveGoals(type, goals);
+  renderGoals(type);
+}
+
+// ── Render ───────────────────────────────────────────────────
+function renderGoals(type){
+  const goals = getGoals(type);
+  const el = document.getElementById('list-'+type);
+
+  if(!goals.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🎯</div>Nenhuma meta ainda.<br>Adicione a sua primeira meta abaixo!</div>`;
+    return;
+  }
+
+  el.innerHTML = goals.map(g=>{
+    const total = g.minis.length;
+    const done  = g.minis.filter(m=>m.done).length;
+    const pct   = total > 0 ? Math.round((done/total)*100) : 0;
+    const completed = total > 0 && done === total;
+
+    // progress bar color: green when 100%, accent otherwise
+    const barColor = completed ? 'var(--green)' : g.color;
+
+    return `
+    <div class="goal-card">
+      <div class="goal-header">
+        <div class="goal-top">
+          <span class="goal-emoji">${g.emoji}</span>
+          <div class="goal-info">
+            <div class="goal-title">${g.title}</div>
+            ${g.desc ? `<div class="goal-desc">${g.desc}</div>` : ''}
+            ${g.deadline ? `<div class="goal-deadline">📅 ${g.deadline}</div>` : ''}
+          </div>
+          ${completed ? `<span class="completed-badge">✓ Concluída</span>` : ''}
+          <button class="goal-del" onclick="deleteGoal('${type}','${g.id}')">×</button>
+        </div>
+
+        ${total > 0 ? `
+        <div class="goal-progress" style="padding:0 0 12px;">
+          <div class="goal-prog-header">
+            <span class="goal-prog-pct" style="color:${barColor};">${pct}%</span>
+            <span class="goal-prog-count">${done} de ${total} mini meta${total!==1?'s':''}</span>
+          </div>
+          <div class="goal-bar-track">
+            <div class="goal-bar-fill" style="width:${pct}%;background:${barColor};"></div>
+          </div>
+        </div>` : ''}
+      </div>
+
+      <!-- Mini goals list -->
+      <div class="mini-goals">
+        ${g.minis.map(m=>`
+          <div class="mini-goal-row">
+            <button class="mini-check ${m.done?'checked':''}" onclick="toggleMini('${type}','${g.id}','${m.id}')" aria-label="Marcar">
+              ${m.done?'<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
+            </button>
+            <span class="mini-label ${m.done?'done':''}">${m.text}</span>
+            <button class="mini-del" onclick="deleteMini('${type}','${g.id}','${m.id}')">×</button>
+          </div>`).join('')}
+
+        <!-- Add mini goal input -->
+        <div class="add-mini-row">
+          <input
+            type="text"
+            class="mini-input"
+            id="mini-input-${g.id}"
+            placeholder="+ Adicionar mini meta..."
+            onkeydown="if(event.key==='Enter') addMini('${type}','${g.id}')"
+          >
+          <button class="mini-add-btn" onclick="addMini('${type}','${g.id}')">+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Init ─────────────────────────────────────────────────────
+renderGoals('curto');
+renderGoals('longo');
+</script>
+</body>
+</html>

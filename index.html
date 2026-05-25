@@ -5,16 +5,255 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Life Organizer</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Hero row: clock + streak side by side ── */
+    .hero-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .hero-clock {
+      background: linear-gradient(135deg, #1e1b3a, #16152a);
+      border: 0.5px solid rgba(124,111,247,.2);
+      border-radius: var(--r-xl);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .hero-clock-time {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+    .hero-clock-sec { font-size: 18px; color: var(--accent); font-weight: 500; }
+    .hero-clock-date { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+
+    /* ── Streak card ── */
+    .hero-streak {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 14px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .streak-count {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .streak-dots {
+      display: flex;
+      gap: 3px;
+      width: 100%;
+    }
+    .streak-dot {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 5px 1px;
+      border-radius: 7px;
+      background: var(--bg3);
+      border: 0.5px solid var(--border);
+      transition: all 0.2s;
+      min-width: 0;
+    }
+    .streak-dot.active { background: rgba(124,111,247,0.2); border-color: var(--accent); }
+    .streak-dot.today  { border-color: var(--accent2); box-shadow: 0 0 0 1.5px rgba(168,156,247,0.3); }
+    .streak-dot.future { opacity: 0.3; }
+    .streak-dot-lbl  { font-size: 8px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .streak-dot.active .streak-dot-lbl { color: var(--accent2); }
+    .streak-dot.today  .streak-dot-lbl { color: var(--text); }
+    .streak-dot-mark { font-size: 10px; color: var(--subtle); }
+    .streak-dot.active .streak-dot-mark { color: var(--accent); font-weight: 700; }
+    .streak-dot.today:not(.active) .streak-dot-mark { color: var(--accent2); }
+
+    /* ── Quote ── */
+    .quote-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .quote-card::before {
+      content: '\201C';
+      position: absolute; top: -10px; left: 12px;
+      font-size: 70px; font-family: var(--font-display);
+      color: rgba(124,111,247,.1); line-height: 1; pointer-events: none;
+    }
+    .quote-text   { font-size: 13px; color: var(--muted); font-style: italic; line-height: 1.6; position: relative; }
+    .quote-author { font-size: 11px; color: var(--accent); margin-top: 6px; font-weight: 500; }
+
+    /* ── Tasks card ── */
+    .tasks-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .tasks-header {
+      padding: 14px 16px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .tasks-header-title {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .tasks-header-count {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .progress-bar-track {
+      height: 3px; background: var(--bg3); border-radius: 99px;
+      overflow: hidden; margin: 10px 16px 0;
+    }
+    .progress-bar-fill {
+      height: 100%; background: var(--accent); border-radius: 99px;
+      transition: width 0.4s ease; width: 0%;
+    }
+
+    /* ── Filter chips ── */
+    .task-filters {
+      display: flex; gap: 5px; padding: 10px 16px 0; overflow-x: auto;
+    }
+    .task-filter {
+      flex-shrink: 0; font-size: 10px; font-weight: 600;
+      padding: 4px 10px; border-radius: 99px;
+      background: var(--bg3); border: 0.5px solid var(--border);
+      color: var(--muted); cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .task-filter.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* ── Task rows ── */
+    #task-list { padding: 4px 0; min-height: 10px; }
+    .task-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-bottom: 0.5px solid var(--border);
+      transition: background .1s;
+    }
+    .task-row:hover { background: var(--bg3); }
+    .task-row:last-child { border-bottom: none; }
+    .task-check-btn {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 1.5px solid var(--accent); background: transparent;
+      cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .task-check-btn.checked { background: var(--accent); border-color: var(--accent); }
+    .task-check-btn:hover { transform: scale(1.1); }
+    .task-label { flex: 1; font-size: 13px; color: var(--text); transition: opacity .2s; }
+    .task-row.done .task-label { opacity: 0.38; text-decoration: line-through; }
+    .task-tag-pill { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
+    .task-del-btn {
+      background: none; border: none; color: var(--subtle);
+      cursor: pointer; padding: 3px 5px; border-radius: var(--r-sm);
+      opacity: 0; transition: opacity .15s, color .15s; font-size: 15px;
+    }
+    .task-row:hover .task-del-btn { opacity: 1; }
+    .task-del-btn:hover { color: var(--coral); }
+
+    /* ── Add task form ── */
+    .add-task-form {
+      display: flex; gap: 7px;
+      padding: 11px 16px 14px;
+      border-top: 0.5px solid var(--border);
+      background: var(--bg3);
+      align-items: center;
+    }
+    .add-task-input {
+      flex: 1; background: var(--surface);
+      border: 0.5px solid var(--border2); border-radius: var(--r-md);
+      padding: 8px 12px; color: var(--text);
+      font-family: var(--font-body); font-size: 13px; outline: none;
+      transition: border-color .15s;
+    }
+    .add-task-input::placeholder { color: var(--subtle); }
+    .add-task-input:focus { border-color: var(--accent); }
+    .add-task-select {
+      background: var(--surface); border: 0.5px solid var(--border2);
+      border-radius: var(--r-md); padding: 8px 6px;
+      color: var(--muted); font-family: var(--font-body);
+      font-size: 11px; cursor: pointer; outline: none; flex-shrink: 0;
+    }
+    .add-task-btn {
+      width: 32px; height: 32px; background: var(--accent);
+      border: none; border-radius: var(--r-md); color: white;
+      font-size: 20px; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s; line-height: 1;
+    }
+    .add-task-btn:hover { opacity: .88; transform: scale(1.05); }
+
+    /* ── Empty tasks ── */
+    .task-empty {
+      padding: 20px 16px; text-align: center;
+      color: var(--muted); font-size: 13px;
+    }
+    .task-empty-icon { font-size: 26px; margin-bottom: 6px; }
+
+    /* ── Section cards ── */
+    .sections-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;
+    }
+    .section-card {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--r-lg); padding: 14px;
+      cursor: pointer; text-decoration: none;
+      transition: all .2s; display: block; position: relative; overflow: hidden;
+    }
+    .section-card::after {
+      content: ''; position: absolute; inset: 0;
+      background: var(--card-glow, transparent);
+      opacity: 0; transition: opacity .2s; border-radius: var(--r-lg);
+    }
+    .section-card:hover { transform: translateY(-2px); border-color: var(--border2); }
+    .section-card:hover::after { opacity: 1; }
+    .section-card.basketball { --card-glow: linear-gradient(135deg,rgba(124,111,247,.1) 0%,transparent 70%); }
+    .section-card.estudos    { --card-glow: linear-gradient(135deg,rgba(52,211,153,.1) 0%,transparent 70%); }
+    .section-card.financeiro { --card-glow: linear-gradient(135deg,rgba(251,191,36,.1) 0%,transparent 70%); }
+    .section-card.rotina     { --card-glow: linear-gradient(135deg,rgba(244,114,182,.1) 0%,transparent 70%); }
+    .section-card.projetos   { --card-glow: linear-gradient(135deg,rgba(124,111,247,.1) 0%,transparent 70%); }
+    .section-card.metas      { --card-glow: linear-gradient(135deg,rgba(248,113,113,.1) 0%,transparent 70%); }
+    .section-icon {
+      width: 36px; height: 36px; border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px; font-size: 17px;
+    }
+    .section-card-name {
+      font-family: var(--font-display); font-size: 13px;
+      font-weight: 700; color: var(--text); margin-bottom: 2px;
+    }
+    .section-card-desc { font-size: 10px; color: var(--muted); line-height: 1.4; }
+  </style>
 </head>
 <body>
-
 <div class="app-wrapper">
 
   <!-- Header -->
   <header class="top-header">
     <div class="app-logo">Life<span>.</span></div>
     <div class="header-actions">
-      <a href="pages/calendario.html" class="icon-btn" title="Calendário" aria-label="Ir para calendário">
+      <a href="pages/calendario.html" class="icon-btn" title="Calendário" aria-label="Calendário">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
           <rect x="1" y="2" width="14" height="13" rx="2"/>
           <line x1="5" y1="1" x2="5" y2="4"/>
@@ -22,143 +261,132 @@
           <line x1="1" y1="7" x2="15" y2="7"/>
         </svg>
       </a>
-      <a href="pages/rotina.html" class="icon-btn" title="Rotina" aria-label="Ir para rotina">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-          <circle cx="8" cy="8" r="6.5"/>
-          <polyline points="8,4.5 8,8 10.5,10"/>
-        </svg>
+      <a href="pages/perfil.html" class="icon-btn" id="profile-btn" title="Perfil" aria-label="Perfil" style="overflow:hidden;padding:0;">
+        <div id="header-avatar" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>
       </a>
     </div>
   </header>
 
   <main class="page-content">
 
-    <!-- Clock -->
-    <section class="clock-section fade-up">
-      <div class="clock-display">
-        <span id="clock">09:09</span>
-        <span class="clock-sec" id="clock-sec">:09</span>
+    <!-- Hero: Clock + Streak -->
+    <div class="hero-row fade-up">
+      <div class="hero-clock">
+        <div class="hero-clock-time">
+          <span id="clock">00:00</span><span class="hero-clock-sec" id="clock-sec">:00</span>
+        </div>
+        <div class="hero-clock-date" id="date-label">carregando...</div>
       </div>
-      <p class="date-label" id="date-label">carregando...</p>
-    </section>
-
-    <!-- Quote -->
-    <div class="quote-card fade-up delay-1">
-      <p class="quote-text" id="quote-text">"Carregando frase..."</p>
-      <p class="quote-author" id="quote-author"></p>
-    </div>
-    
-    <!-- Streak -->
-    <div class="streak-card fade-up delay-2">
-      <div class="streak-info">
-        <div class="streak-count" id="streak-count">🔥 0 dias seguidos</div>
+      <div class="hero-streak">
+        <div class="streak-count" id="streak-count">🔥 0 dias</div>
         <div class="streak-dots" id="streak-dots"></div>
       </div>
     </div>
 
-    <!-- Today's Tasks -->
-    <section class="fade-up delay-3">
-      <div class="section-title">
-        Daily Tasks
-        <span id="progress-label"></span>
-      </div>
+    <!-- Quote -->
+    <div class="quote-card fade-up delay-1">
+      <p class="quote-text" id="quote-text">"Carregando frase do dia..."</p>
+      <p class="quote-author" id="quote-author"></p>
+    </div>
 
+    <!-- Tasks -->
+    <section class="fade-up delay-2">
       <div class="tasks-card">
         <div class="tasks-header">
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" id="progress-bar"></div>
-          </div>
+          <span class="tasks-header-title">📋 Afazeres de hoje</span>
+          <span class="tasks-header-count" id="progress-label"></span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progress-bar"></div>
+        </div>
+
+        <!-- Filter chips -->
+        <div class="task-filters" id="task-filters">
+          <span class="task-filter active" onclick="setTaskFilter('todos',this)">Todos</span>
+          <span class="task-filter" onclick="setTaskFilter('basquete',this)">🏀 Basquete</span>
+          <span class="task-filter" onclick="setTaskFilter('faculdade',this)">📚 Faculdade</span>
+          <span class="task-filter" onclick="setTaskFilter('pessoal',this)">⭐ Pessoal</span>
+          <span class="task-filter" onclick="setTaskFilter('financeiro',this)">💰 Financeiro</span>
+          <span class="task-filter" onclick="setTaskFilter('projeto',this)">🚀 Projeto</span>
+          <span class="task-filter" onclick="setTaskFilter('outro',this)">📌 Outro</span>
         </div>
 
         <div id="task-list"></div>
 
         <div class="add-task-form">
-          <input
-            type="text"
-            id="new-task-input"
-            class="add-task-input"
-            placeholder="Adicionar tarefa..."
-            maxlength="80"
-          >
+          <input type="text" id="new-task-input" class="add-task-input" placeholder="Nova tarefa..." maxlength="80">
           <select id="new-task-tag" class="add-task-select">
-            <option value="basquete">🏀 Basquete</option>
-            <option value="faculdade">📚 Faculdade</option>
-            <option value="pessoal" selected>⭐ Pessoal</option>
-            <option value="financeiro">💰 Financeiro</option>
-            <option value="projeto">🚀 Projeto</option>
-            <option value="outro">📌 Outro</option>
+            <option value="basquete">🏀</option>
+            <option value="faculdade">📚</option>
+            <option value="pessoal" selected>⭐</option>
+            <option value="financeiro">💰</option>
+            <option value="projeto">🚀</option>
+            <option value="outro">📌</option>
           </select>
-          <button class="add-task-btn" onclick="addTask()" aria-label="Adicionar tarefa">+</button>
+          <button class="add-task-btn" onclick="addTask()" aria-label="Adicionar">+</button>
         </div>
       </div>
     </section>
 
-    <!-- Sections -->
-    <div class="section-title fade-up delay-4">Seções</div>
-
-    <div class="sections-grid fade-up delay-5">
+    <!-- Sections grid -->
+    <div class="section-title fade-up delay-3">Seções</div>
+    <div class="sections-grid fade-up delay-4">
 
       <a href="pages/basquete.html" class="section-card basketball">
-        <div class="section-icon" style="background: rgba(124,111,247,0.15);">🏀</div>
+        <div class="section-icon" style="background:rgba(124,111,247,.15);">🏀</div>
         <div class="section-card-name">Basquete</div>
         <div class="section-card-desc">Treinos · academia · film study</div>
       </a>
 
       <a href="pages/estudos.html" class="section-card estudos">
-        <div class="section-icon" style="background: rgba(52,211,153,0.12);">📚</div>
+        <div class="section-icon" style="background:rgba(52,211,153,.12);">📚</div>
         <div class="section-card-name">Estudos</div>
         <div class="section-card-desc">Faculdade · livros · pomodoro</div>
       </a>
 
       <a href="pages/financeiro.html" class="section-card financeiro">
-        <div class="section-icon" style="background: rgba(251,191,36,0.12);">💰</div>
+        <div class="section-icon" style="background:rgba(251,191,36,.12);">💰</div>
         <div class="section-card-name">Financeiro</div>
         <div class="section-card-desc">Gastos · receitas · metas</div>
       </a>
 
       <a href="pages/rotina.html" class="section-card rotina">
-        <div class="section-icon" style="background: rgba(244,114,182,0.12);">🔄</div>
+        <div class="section-icon" style="background:rgba(244,114,182,.12);">🔄</div>
         <div class="section-card-name">Rotina</div>
         <div class="section-card-desc">Hábitos · horários diários</div>
       </a>
 
       <a href="pages/projetos.html" class="section-card projetos">
-        <div class="section-icon" style="background: rgba(124,111,247,0.12);">🚀</div>
+        <div class="section-icon" style="background:rgba(124,111,247,.12);">🚀</div>
         <div class="section-card-name">Projetos</div>
-        <div class="section-card-desc">Kanban · app de basquete</div>
+        <div class="section-card-desc">Pessoais · app de basquete</div>
       </a>
 
       <a href="pages/metas.html" class="section-card metas">
-        <div class="section-icon" style="background: rgba(248,113,113,0.12);">🎯</div>
+        <div class="section-icon" style="background:rgba(248,113,113,.12);">🎯</div>
         <div class="section-card-name">Metas</div>
         <div class="section-card-desc">Curto e longo prazo</div>
       </a>
 
     </div>
-
   </main>
 
   <!-- Bottom Nav -->
   <nav class="bottom-nav" aria-label="Navegação principal">
-    <a href="../index.html" class="nav-item active" data-page="index.html">
-      <span class="nav-icon">🏠</span>
-      <span class="nav-label">Início</span>
+    <a href="index.html" class="nav-item active" data-page="index.html">
+      <span class="nav-icon">🏠</span><span class="nav-label">Início</span>
     </a>
     <a href="pages/calendario.html" class="nav-item" data-page="calendario.html">
-      <span class="nav-icon">📅</span>
-      <span class="nav-label">Calendário</span>
+      <span class="nav-icon">📅</span><span class="nav-label">Calendário</span>
     </a>
     <a href="pages/rotina.html" class="nav-item" data-page="rotina.html">
-      <span class="nav-icon">🔄</span>
-      <span class="nav-label">Rotina</span>
+      <span class="nav-icon">🔄</span><span class="nav-label">Rotina</span>
     </a>
     <a href="pages/basquete.html" class="nav-item" data-page="basquete.html">
-      <span class="nav-icon">🏀</span>
-      <span class="nav-label">Basquete</span>
+      <span class="nav-icon">🏀</span><span class="nav-label">Basquete</span>
     </a>
-    <a href="pages/estudos.html" class="nav-item" data-page="estudos.html">
-      <span class="nav-icon">📚</span>
-      <span class="nav-label">Estudos</span>
+    <a href="pages/perfil.html" class="nav-item" data-page="perfil.html">
+      <span class="nav-icon">👤</span><span class="nav-label">Perfil</span>
     </a>
   </nav>
 
@@ -166,59 +394,101 @@
 
 <script src="data/frases.js"></script>
 <script src="js/main.js"></script>
-
-
 <script>
-let atual = 0;
+  // ── Task filter ───────────────────────────────────────────
+  let activeTaskFilter = 'todos';
 
-function trocarFrase() {
-    const frase = frases[atual];
+  function setTaskFilter(tag, btn) {
+    activeTaskFilter = tag;
+    document.querySelectorAll('.task-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTasks();
+  }
 
-    document.getElementById("quote-text").innerText =
-        `"${frase.texto}"`;
+  // Override renderTasks to support filtering
+  const _origRender = renderTasks;
+  function renderTasks() {
+    const list = document.getElementById('task-list');
+    if (!list) return;
 
-    document.getElementById("quote-author").innerText =
-        `— ${frase.autor}`;
+    let tasks = getTasks().filter(t => t.date === getTodayKey() || !t.date);
+    const allTodayTasks = tasks;
 
-    atual++;
-
-    if (atual >= frases.length) {
-        atual = 0;
+    if (activeTaskFilter !== 'todos') {
+      tasks = tasks.filter(t => t.tag === activeTaskFilter);
     }
-}
 
-trocarFrase();
+    list.innerHTML = '';
 
-// troca a cada 15 minutos
-setInterval(trocarFrase, 15 * 60 * 1000);
-</script>
-    <script>
-function atualizarRelogio() {
-    const agora = new Date();
+    if (tasks.length === 0) {
+      list.innerHTML = `<div class="task-empty">
+        <div class="task-empty-icon">${activeTaskFilter === 'todos' ? '✓' : '🔍'}</div>
+        ${activeTaskFilter === 'todos' ? 'Nenhuma tarefa. Adicione uma abaixo!' : 'Nenhuma tarefa nessa categoria.'}
+      </div>`;
+      updateProgress(allTodayTasks);
+      return;
+    }
 
-    let horas = String(agora.getHours()).padStart(2,'0');
-    let minutos = String(agora.getMinutes()).padStart(2,'0');
-    let segundos = String(agora.getSeconds()).padStart(2,'0');
+    const tagColors = {
+      basquete:   ['rgba(124,111,247,.15)', '#a89cf7'],
+      faculdade:  ['rgba(52,211,153,.12)',  '#34d399'],
+      pessoal:    ['rgba(251,191,36,.12)',  '#fbbf24'],
+      financeiro: ['rgba(248,113,113,.12)', '#f87171'],
+      projeto:    ['rgba(96,165,250,.12)',  '#60a5fa'],
+      outro:      ['rgba(255,255,255,.07)', '#6b7280'],
+    };
 
-    const data = agora.toLocaleDateString('pt-BR',{
-        weekday:'long',
-        day:'numeric',
-        month:'long'
+    const allTasks = getTasks();
+
+    tasks.forEach(task => {
+      const realIdx = allTasks.findIndex(t => t.text === task.text && t.date === task.date);
+      const [bg, color] = tagColors[task.tag] || tagColors.outro;
+      const div = document.createElement('div');
+      div.className = 'task-row' + (task.done ? ' done' : '');
+      div.innerHTML = `
+        <button class="task-check-btn ${task.done ? 'checked' : ''}" onclick="toggleTask(${realIdx})" aria-label="Marcar">
+          ${task.done ? '<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+        </button>
+        <span class="task-label">${task.text}</span>
+        <span class="task-tag-pill" style="background:${bg};color:${color};">${task.tag}</span>
+        <button class="task-del-btn" onclick="deleteTask(${realIdx})" aria-label="Remover">×</button>`;
+      list.appendChild(div);
     });
 
-    document.getElementById("clock").innerText =
-        `${horas}:${minutos}`;
+    updateProgress(allTodayTasks);
+  }
 
-    document.getElementById("clock-sec").innerText =
-        `:${segundos}`;
+  // Patch toggleTask and deleteTask to use raw index in full array
+  function toggleTask(i) {
+    const allTasks = getTasks();
+    if (allTasks[i]) {
+      allTasks[i].done = !allTasks[i].done;
+      saveTasks(allTasks);
+      renderTasks();
+    }
+  }
 
-    document.getElementById("date-label").innerText =
-        data;
-}
+  function deleteTask(i) {
+    const allTasks = getTasks();
+    allTasks.splice(i, 1);
+    saveTasks(allTasks);
+    renderTasks();
+  }
 
-atualizarRelogio();
-
-setInterval(atualizarRelogio,1000);
+  // Load avatar in header button
+  const _avatarData = localStorage.getItem('user_avatar');
+  if(_avatarData){
+    const _el = document.getElementById('header-avatar');
+    if(_el){
+      _el.style.backgroundImage = `url(${_avatarData})`;
+      _el.style.backgroundSize = 'cover';
+      _el.style.backgroundPosition = 'center';
+      _el.style.borderRadius = '50%';
+      _el.style.width = '36px';
+      _el.style.height = '36px';
+      _el.textContent = '';
+    }
+  }
 </script>
 </body>
 </html>

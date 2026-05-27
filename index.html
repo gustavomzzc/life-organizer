@@ -244,10 +244,47 @@
       font-weight: 700; color: var(--text); margin-bottom: 2px;
     }
     .section-card-desc { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+    /* ── Login overlay ── */
+    #login-overlay {
+      position: fixed; inset: 0; z-index: 999;
+      background: rgba(10,9,20,0.92);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; padding: 32px;
+    }
+    #login-overlay.hidden { display: none; }
+    .login-logo {
+      font-family: var(--font-display);
+      font-size: 36px; font-weight: 800; color: var(--text);
+    }
+    .login-logo span { color: var(--accent); }
+    .login-subtitle {
+      font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6;
+    }
+    .login-btn-google {
+      display: flex; align-items: center; gap: 10px;
+      background: white; color: #1a1a1a;
+      border: none; border-radius: var(--r-md);
+      padding: 11px 20px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all .15s; margin-top: 8px;
+    }
+    .login-btn-google:hover { opacity: .9; transform: scale(1.02); }
+    .login-btn-google svg { width: 18px; height: 18px; flex-shrink: 0; }
   </style>
 </head>
 <body>
 <div class="app-wrapper">
+
+  <!-- Login overlay (visível até autenticar) -->
+  <div id="login-overlay">
+    <div class="login-logo">Life<span>.</span></div>
+    <p class="login-subtitle">Organize sua vida.<br>Faça login para continuar.</p>
+    <button class="login-btn-google" id="login-btn">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.86l6.08-6.08C34.46 3.1 29.5 1 24 1 14.82 1 7.07 6.49 3.64 14.22l7.08 5.5C12.4 13.67 17.73 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.64-.15-3.22-.42-4.75H24v9h12.42c-.54 2.9-2.18 5.36-4.64 7.01l7.19 5.58C43.18 37.1 46.1 31.27 46.1 24.5z"/><path fill="#FBBC05" d="M10.72 28.28A14.6 14.6 0 0 1 9.5 24c0-1.49.26-2.93.72-4.28l-7.08-5.5A23.9 23.9 0 0 0 0 24c0 3.87.93 7.53 2.58 10.76l8.14-6.48z"/><path fill="#34A853" d="M24 47c5.5 0 10.12-1.82 13.49-4.95l-7.19-5.58C28.6 38.13 26.42 39 24 39c-6.27 0-11.6-4.17-13.28-9.72l-8.14 6.48C6.07 43.51 14.47 47 24 47z"/></svg>
+      Entrar com Google
+    </button>
+  </div>
 
   <!-- Header -->
   <header class="top-header">
@@ -323,7 +360,7 @@
             <option value="projeto">🚀</option>
             <option value="outro">📌</option>
           </select>
-          <button class="add-task-btn" onclick="addTask()" aria-label="Adicionar">+</button>
+          <button class="add-task-btn" onclick="window.addTask()" aria-label="Adicionar">+</button>
         </div>
       </div>
     </section>
@@ -393,7 +430,29 @@
 </div>
 
 <script src="data/frases.js"></script>
-<script src="js/main.js"></script>
+<script type="module" src="js/main.js"></script>
+<script type="module">
+  import { loginGoogle, onAuthChange, logout } from './js/firebase.js';
+
+  // Botão de login no overlay
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    try {
+      await loginGoogle();
+    } catch (e) {
+      console.error('Erro no login:', e);
+    }
+  });
+
+  // Mostra/esconde overlay conforme estado do auth
+  onAuthChange((user) => {
+    const overlay = document.getElementById('login-overlay');
+    if (user) {
+      overlay.classList.add('hidden');
+    } else {
+      overlay.classList.remove('hidden');
+    }
+  });
+</script>
 <script>
   // ── Task filter ───────────────────────────────────────────
   let activeTaskFilter = 'todos';
@@ -402,92 +461,7 @@
     activeTaskFilter = tag;
     document.querySelectorAll('.task-filter').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    renderTasks();
-  }
-
-  // Override renderTasks to support filtering
-  const _origRender = renderTasks;
-  function renderTasks() {
-    const list = document.getElementById('task-list');
-    if (!list) return;
-
-    let tasks = getTasks().filter(t => t.date === getTodayKey() || !t.date);
-    const allTodayTasks = tasks;
-
-    if (activeTaskFilter !== 'todos') {
-      tasks = tasks.filter(t => t.tag === activeTaskFilter);
-    }
-
-    list.innerHTML = '';
-
-    if (tasks.length === 0) {
-      list.innerHTML = `<div class="task-empty">
-        <div class="task-empty-icon">${activeTaskFilter === 'todos' ? '✓' : '🔍'}</div>
-        ${activeTaskFilter === 'todos' ? 'Nenhuma tarefa. Adicione uma abaixo!' : 'Nenhuma tarefa nessa categoria.'}
-      </div>`;
-      updateProgress(allTodayTasks);
-      return;
-    }
-
-    const tagColors = {
-      basquete:   ['rgba(124,111,247,.15)', '#a89cf7'],
-      faculdade:  ['rgba(52,211,153,.12)',  '#34d399'],
-      pessoal:    ['rgba(251,191,36,.12)',  '#fbbf24'],
-      financeiro: ['rgba(248,113,113,.12)', '#f87171'],
-      projeto:    ['rgba(96,165,250,.12)',  '#60a5fa'],
-      outro:      ['rgba(255,255,255,.07)', '#6b7280'],
-    };
-
-    const allTasks = getTasks();
-
-    tasks.forEach(task => {
-      const realIdx = allTasks.findIndex(t => t.text === task.text && t.date === task.date);
-      const [bg, color] = tagColors[task.tag] || tagColors.outro;
-      const div = document.createElement('div');
-      div.className = 'task-row' + (task.done ? ' done' : '');
-      div.innerHTML = `
-        <button class="task-check-btn ${task.done ? 'checked' : ''}" onclick="toggleTask(${realIdx})" aria-label="Marcar">
-          ${task.done ? '<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
-        </button>
-        <span class="task-label">${task.text}</span>
-        <span class="task-tag-pill" style="background:${bg};color:${color};">${task.tag}</span>
-        <button class="task-del-btn" onclick="deleteTask(${realIdx})" aria-label="Remover">×</button>`;
-      list.appendChild(div);
-    });
-
-    updateProgress(allTodayTasks);
-  }
-
-  // Patch toggleTask and deleteTask to use raw index in full array
-  function toggleTask(i) {
-    const allTasks = getTasks();
-    if (allTasks[i]) {
-      allTasks[i].done = !allTasks[i].done;
-      saveTasks(allTasks);
-      renderTasks();
-    }
-  }
-
-  function deleteTask(i) {
-    const allTasks = getTasks();
-    allTasks.splice(i, 1);
-    saveTasks(allTasks);
-    renderTasks();
-  }
-
-  // Load avatar in header button
-  const _avatarData = localStorage.getItem('user_avatar');
-  if(_avatarData){
-    const _el = document.getElementById('header-avatar');
-    if(_el){
-      _el.style.backgroundImage = `url(${_avatarData})`;
-      _el.style.backgroundSize = 'cover';
-      _el.style.backgroundPosition = 'center';
-      _el.style.borderRadius = '50%';
-      _el.style.width = '36px';
-      _el.style.height = '36px';
-      _el.textContent = '';
-    }
+    window.renderTasks && window.renderTasks();
   }
 </script>
 </body>

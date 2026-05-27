@@ -1,3 +1,11 @@
+import { loginGoogle, logout, onAuthChange, currentUser,
+         getTasks, saveTasks, getStreak, saveStreak,
+         getDailyQuote, saveDailyQuote, getProfile }
+  from './firebase.js';
+
+// Expõe funções para uso inline no HTML
+window._fb = { loginGoogle, logout };
+
 // ── Clock & Date ──────────────────────────────────────────
 function updateClock() {
   const now = new Date();
@@ -22,15 +30,15 @@ setInterval(updateClock, 1000);
 updateClock();
 
 // ── Random Quote ──────────────────────────────────────────
-function loadQuote() {
+async function loadQuote() {
   const today = new Date().toDateString();
-  const stored = JSON.parse(localStorage.getItem('daily_quote') || 'null');
+  let stored = await getDailyQuote();
   let frase;
   if (stored && stored.date === today) {
     frase = stored.frase;
   } else {
     frase = frases[Math.floor(Math.random() * frases.length)];
-    localStorage.setItem('daily_quote', JSON.stringify({ date: today, frase }));
+    await saveDailyQuote({ date: today, frase });
   }
   const textoEl = document.getElementById('quote-text');
   const autorEl = document.getElementById('quote-author');
@@ -38,21 +46,20 @@ function loadQuote() {
   if (autorEl) autorEl.textContent = `— ${frase.autor}`;
 }
 
-// ── Tasks ────────────────────────────────────────────────
-function getTasks() {
-  return JSON.parse(localStorage.getItem('tasks') || '[]');
-}
-function saveTasks(tasks) {
-  localStorage.setItem('tasks', JSON.stringify(tasks));
-}
+// ── Tasks ─────────────────────────────────────────────────
 function getTodayKey() {
   return new Date().toISOString().split('T')[0];
 }
 
-function renderTasks() {
+window.getTasks = getTasks;
+window.saveTasks = saveTasks;
+window.getTodayKey = getTodayKey;
+
+async function renderTasks() {
   const list = document.getElementById('task-list');
   if (!list) return;
-  const tasks = getTasks().filter(t => t.date === getTodayKey() || !t.date);
+  const allTasks = await getTasks();
+  const tasks = allTasks.filter(t => t.date === getTodayKey() || !t.date);
   list.innerHTML = '';
 
   if (tasks.length === 0) {
@@ -60,36 +67,36 @@ function renderTasks() {
       <span style="font-size:28px;">✓</span>
       <p style="margin:8px 0 0;font-size:13px;">Nenhuma tarefa ainda. Adicione uma abaixo!</p>
     </div>`;
+    updateProgress([]);
     return;
   }
 
   const tagColors = {
-    'basquete': ['#e8e4ff','#3C3489'],
-    'faculdade': ['#e1f5ee','#085041'],
-    'pessoal': ['#faeeda','#633806'],
-    'financeiro': ['#fce8e8','#791F1F'],
-    'projeto': ['#eaf3de','#27500A'],
-    'outro': ['#f1efe8','#444441']
+    basquete: ['rgba(124,111,247,.15)', '#a89cf7'],
+    faculdade: ['rgba(52,211,153,.12)', '#34d399'],
+    pessoal:   ['rgba(251,191,36,.12)', '#fbbf24'],
+    financeiro:['rgba(248,113,113,.12)', '#f87171'],
+    projeto:   ['rgba(96,165,250,.12)', '#60a5fa'],
+    outro:     ['rgba(255,255,255,.07)', '#6b7280'],
   };
 
   tasks.forEach((task, i) => {
-    const colors = tagColors[task.tag] || tagColors['outro'];
+    const [bg, color] = tagColors[task.tag] || tagColors.outro;
     const div = document.createElement('div');
-    div.className = 'task-row' + (task.done ? ' task-done' : '');
+    div.className = 'task-row' + (task.done ? ' done' : '');
     div.innerHTML = `
-      <button class="task-check-btn${task.done ? ' checked' : ''}" onclick="toggleTask(${i})" aria-label="${task.done ? 'Desmarcar' : 'Marcar como feito'}">
+      <button class="task-check-btn ${task.done ? 'checked' : ''}" onclick="window.toggleTask(${i})" aria-label="Marcar">
         ${task.done ? '<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
       </button>
       <span class="task-label">${task.text}</span>
-      <span class="task-tag-pill" style="background:${colors[0]};color:${colors[1]}">${task.tag}</span>
-      <button class="task-del-btn" onclick="deleteTask(${i})" aria-label="Remover tarefa">
-        <svg width="12" height="12" viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </button>`;
+      <span class="task-tag-pill" style="background:${bg};color:${color};">${task.tag}</span>
+      <button class="task-del-btn" onclick="window.deleteTask(${i})" aria-label="Remover">×</button>`;
     list.appendChild(div);
   });
 
   updateProgress(tasks);
 }
+window.renderTasks = renderTasks;
 
 function updateProgress(tasks) {
   const done = tasks.filter(t => t.done).length;
@@ -100,51 +107,50 @@ function updateProgress(tasks) {
   if (label) label.textContent = total ? `${done} de ${total} tarefas` : '';
 }
 
-function toggleTask(i) {
-  const tasks = getTasks().filter(t => t.date === getTodayKey() || !t.date);
-  const allTasks = getTasks();
-  const taskIndex = allTasks.findIndex(t => t === tasks[i] || (t.text === tasks[i].text && t.date === tasks[i].date));
-  if (taskIndex > -1) {
-    allTasks[taskIndex].done = !allTasks[taskIndex].done;
-    saveTasks(allTasks);
+window.toggleTask = async function(i) {
+  const allTasks = await getTasks();
+  const todayTasks = allTasks.filter(t => t.date === getTodayKey() || !t.date);
+  const target = todayTasks[i];
+  const idx = allTasks.findIndex(t => t.text === target.text && t.date === target.date);
+  if (idx > -1) {
+    allTasks[idx].done = !allTasks[idx].done;
+    await saveTasks(allTasks);
     renderTasks();
   }
-}
+};
 
-function deleteTask(i) {
-  const tasks = getTasks().filter(t => t.date === getTodayKey() || !t.date);
-  const target = tasks[i];
-  const allTasks = getTasks().filter(t => !(t.text === target.text && t.date === target.date));
-  saveTasks(allTasks);
+window.deleteTask = async function(i) {
+  const allTasks = await getTasks();
+  const todayTasks = allTasks.filter(t => t.date === getTodayKey() || !t.date);
+  const target = todayTasks[i];
+  const newTasks = allTasks.filter(t => !(t.text === target.text && t.date === target.date));
+  await saveTasks(newTasks);
   renderTasks();
-}
+};
 
-function addTask() {
+window.addTask = async function() {
   const input = document.getElementById('new-task-input');
   const tagSelect = document.getElementById('new-task-tag');
   if (!input || !input.value.trim()) return;
-  const tasks = getTasks();
-  tasks.push({ text: input.value.trim(), tag: tagSelect.value, done: false, date: getTodayKey() });
-  saveTasks(tasks);
+  const allTasks = await getTasks();
+  allTasks.push({ text: input.value.trim(), tag: tagSelect.value, done: false, date: getTodayKey() });
+  await saveTasks(allTasks);
   input.value = '';
   renderTasks();
   updateStreak();
-}
+};
 
-// Enter key on input
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && document.activeElement?.id === 'new-task-input') addTask();
+  if (e.key === 'Enter' && document.activeElement?.id === 'new-task-input') window.addTask();
 });
 
 // ── Streak ────────────────────────────────────────────────
-function updateStreak() {
-  const key = 'streak_data';
-  const stored = JSON.parse(localStorage.getItem(key) || '{"days":[],"count":0}');
+async function updateStreak() {
+  const stored = await getStreak();
   const today = getTodayKey();
   if (!stored.days.includes(today)) {
     stored.days.push(today);
     stored.days = stored.days.slice(-30);
-    // Check consecutive
     let count = 0;
     const d = new Date();
     for (let i = 0; i < 30; i++) {
@@ -153,7 +159,7 @@ function updateStreak() {
       else break;
     }
     stored.count = count;
-    localStorage.setItem(key, JSON.stringify(stored));
+    await saveStreak(stored);
   }
   renderStreak(stored);
 }
@@ -161,7 +167,6 @@ function updateStreak() {
 function renderStreak(data) {
   const el = document.getElementById('streak-count');
   if (el) el.textContent = `🔥 ${data.count} dia${data.count !== 1 ? 's' : ''} seguido${data.count !== 1 ? 's' : ''}`;
-
   const dotsEl = document.getElementById('streak-dots');
   if (!dotsEl) return;
   const shortDays = ['D','S','T','Q','Q','S','S'];
@@ -179,6 +184,23 @@ function renderStreak(data) {
   }
 }
 
+// ── Auth UI ───────────────────────────────────────────────
+function renderAuthBtn(user) {
+  // Atualiza avatar no header
+  const avatarEl = document.getElementById('header-avatar');
+  if (!avatarEl) return;
+  if (user) {
+    avatarEl.style.backgroundImage = `url(${user.photoURL})`;
+    avatarEl.style.backgroundSize = 'cover';
+    avatarEl.style.backgroundPosition = 'center';
+    avatarEl.style.borderRadius = '50%';
+    avatarEl.textContent = '';
+  } else {
+    avatarEl.style.backgroundImage = '';
+    avatarEl.textContent = '👤';
+  }
+}
+
 // ── Nav highlight ─────────────────────────────────────────
 function setActiveNav() {
   const path = window.location.pathname.split('/').pop() || 'index.html';
@@ -189,10 +211,14 @@ function setActiveNav() {
 
 // ── Init ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
-  loadQuote();
-  renderTasks();
-  const streak = JSON.parse(localStorage.getItem('streak_data') || '{"days":[],"count":0}');
-  renderStreak(streak);
-  updateStreak();
   setActiveNav();
+
+  onAuthChange(async (user) => {
+    renderAuthBtn(user);
+    await loadQuote();
+    await renderTasks();
+    const streak = await getStreak();
+    renderStreak(streak);
+    await updateStreak();
+  });
 });

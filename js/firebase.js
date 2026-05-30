@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc }
+import { getFirestore, doc, getDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -41,7 +41,7 @@ function userDoc(uid) {
   return doc(db, "users", uid);
 }
 
-// ── Tasks ────────────────────────────────────────────────
+// ── Tasks ─────────────────────────────────────────────────
 export async function getTasks() {
   const user = auth.currentUser;
   if (!user) return JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -83,18 +83,21 @@ export async function saveDailyQuote(quote) {
   await setDoc(userDoc(user.uid), { daily_quote: quote }, { merge: true });
 }
 
-// ── Profile / Avatar ──────────────────────────────────────
+// ── Profile ───────────────────────────────────────────────
 export async function getProfile() {
   const user = auth.currentUser;
-  if (!user) return { avatar: localStorage.getItem('user_avatar') || null, name: '' };
+  if (!user) return {};
   const snap = await getDoc(userDoc(user.uid));
-  if (snap.exists() && snap.data().profile) return snap.data().profile;
-  // Primeira vez: salva dados do Google
-  const profile = {
-    name: user.displayName || '',
-    email: user.email || '',
-    avatar: user.photoURL || null
-  };
+  const saved = snap.exists() ? (snap.data().profile || {}) : {};
+  // Preenche com dados do Google se ainda não foram salvos
+  if (!saved.name)        saved.name        = user.displayName || '';
+  if (!saved.email)       saved.email       = user.email || '';
+  if (!saved.googlePhoto) saved.googlePhoto = user.photoURL || null;
+  return saved;
+}
+
+export async function saveProfile(profile) {
+  const user = auth.currentUser;
+  if (!user) return;
   await setDoc(userDoc(user.uid), { profile }, { merge: true });
-  return profile;
 }
